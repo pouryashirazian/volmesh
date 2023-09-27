@@ -2,26 +2,34 @@ cmake_minimum_required(VERSION 3.20)
 
 project(volmesh LANGUAGES CXX)
 
-find_package(cxxopts REQUIRED)
-find_package(Eigen3 REQUIRED)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# find_package(cxxopts REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+# message(FATAL_ERROR "EIGEN3_INCLUDE_DIR = ${EIGEN3_INCLUDE_DIR}")
+# INCLUDE_DIRECTORIES ( "${EIGEN3_INCLUDE_DIR}" )
 
 enable_testing()
-find_package(GTest CONFIG REQUIRED)
+# find_package(GTest CONFIG REQUIRED)
+# message(FATAL_ERROR "GTEST_INCLUDE_DIRS = ${GTEST_INCLUDE_DIRS}")
+set(LIB_NAME "volmesh")
 
-set(CMAKE_CXX_STANDARD 14)
-
-add_library(${PROJECT_NAME}
+add_library(${LIB_NAME}
             STATIC
             src/volmesh/halfedge.cpp
             src/volmesh/keys.cpp
+            src/volmesh/sampletetmeshes.cpp
             #  src/volmesh/stlserializer.cpp
-            src/volmesh/tetmesh.cpp)
+            src/volmesh/tetmesh.cpp
+            src/volmesh/tetrahedra.cpp)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(${PROJECT_NAME}
+target_include_directories(${LIB_NAME} PRIVATE
+                           ${CMAKE_SOURCE_DIR}/include)
+
+target_link_libraries(${LIB_NAME}
                       PRIVATE
-                      cxxopts::cxxopts
                       Eigen3::Eigen)
-
 
 add_subdirectory(test)

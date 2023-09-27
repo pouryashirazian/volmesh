@@ -8,7 +8,7 @@ namespace volmesh {
 
   class HalfEdge {
   public:
-    HalfEdge(const VertexKey& start, const VertexKey& end);
+    explicit HalfEdge(const VertexKey& start, const VertexKey& end);
     ~HalfEdge();
 
     const VertexKey& start() const;

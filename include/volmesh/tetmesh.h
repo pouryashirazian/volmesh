@@ -14,10 +14,19 @@ namespace volmesh {
 
     TetMesh();
     explicit TetMesh(const TetMesh& rhs);
+    explicit TetMesh(const std::vector<vec3>& in_vertices,
+                     const std::vector<vec4i>& in_cells);
     ~TetMesh();
 
     void copyFrom(const TetMesh& rhs);
     void clear();
+
+    bool readFromList(const std::vector<vec3>& in_vertices,
+                      const std::vector<vec4i>& in_cells);
+
+    bool writeToList(std::vector<vec3>& out_vertices,
+                     std::vector<vec4i>& out_cells) const;
+
 
     uint64_t countCells() const;
     uint64_t countFaces() const;

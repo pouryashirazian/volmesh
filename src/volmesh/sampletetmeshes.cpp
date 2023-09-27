@@ -1,32 +1,24 @@
 #include "volmesh/sampletetmeshes.h"
 
+#include <vector>
+
 namespace volmesh {
 
   void createOneTetrahedra(TetMesh& inout_mesh) {
-	vector<double> vertices;
-	vector<U32> elements;
+    std::vector<vec3> vertices = {
+      {-1, 0, 0},
+      {0, 0, -2},
+      {1, 0, 0},
+      {0, 2, -1}
+    };
 
-	vec3d points[4];
-	points[0] = vec3d(-1, 0, 0);
-	points[1] = vec3d(0, 0, -2);
-	points[2] = vec3d(1, 0, 0);
-	points[3] = vec3d(0, 2, -1);
+    std::vector<vec4i> cells = {
+      {0, 1, 2, 3}
+    };
 
-	vertices.resize(4 * 3);
-	for (int i = 0; i < 4; i++) {
-		points[i].store(&vertices[i * 3]);
-	}
-
-	elements.resize(4);
-	elements[0] = 0;
-	elements[1] = 1;
-	elements[2] = 2;
-	elements[3] = 3;
-
-	VolMesh* tet = new VolMesh(vertices, elements);
-	tet->setName("onetet");
-	return tet;
+    inout_mesh.readFromList(vertices, cells);
   }
+
 
   void createTwoTetrahedra(TetMesh& inout_mesh) {
 
