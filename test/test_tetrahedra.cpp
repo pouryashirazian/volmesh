@@ -54,3 +54,10 @@ TEST(Tetrahedra, Centroid) {
   EXPECT_NEAR(centroid.z(), gt_centroid.z(), kEpsilon);
 }
 
+TEST(Tetrahedra, DeterminantVolume) {
+  Tetrahedra t1(kTetVertices);
+  const real_t volume = t1.volume();
+  const real_t volume_gt = static_cast<real_t>(1.0 / 6.0) * fabs(t1.determinant());
+  EXPECT_NEAR(volume, volume_gt, kEpsilon);
+}
+
