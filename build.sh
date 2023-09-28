@@ -22,7 +22,7 @@ get_current_dir
 
 # ./vcpkg/bootstrap-vcpkg.sh
 
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=${DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=${DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Debug
 
 cmake --build build
 

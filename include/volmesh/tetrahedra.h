@@ -8,20 +8,20 @@ namespace volmesh {
 
   class Tetrahedra {
   public:
-    static const int kNumVertices = 4;
+    static const int kNumVerticesPerCell = 4;
     static const int kNumFaces = 4;
     static const int kNumEdges = 6;
 
-    typedef std::array<vec3, kNumVertices> VertexArray;
+    typedef Eigen::Matrix<real_t, 3, kNumVerticesPerCell> VertexArray4;
 
     Tetrahedra();
     Tetrahedra(const Tetrahedra& rhs);
-    explicit Tetrahedra(const VertexArray& vertices);
+    explicit Tetrahedra(const VertexArray4& vertices);
     ~Tetrahedra();
 
-    const VertexArray& vertices() const;
+    const VertexArray4& vertices() const;
 
-    vec3 vertex(const int i) const;
+    vec3 vertex(const int vertex_id) const;
 
     real_t surfaceArea() const;
 
@@ -45,7 +45,7 @@ namespace volmesh {
     static vec2i edgeIndices(const int edge_id);
 
   private:
-    VertexArray vertices_;
+    VertexArray4 vertices_;
   };
 
 }

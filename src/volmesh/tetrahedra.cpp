@@ -11,7 +11,7 @@ Tetrahedra::Tetrahedra(const Tetrahedra& rhs): vertices_(rhs.vertices_) {
 
 }
 
-Tetrahedra::Tetrahedra(const Tetrahedra::VertexArray& vertices): vertices_(vertices) {
+Tetrahedra::Tetrahedra(const Tetrahedra::VertexArray4& vertices): vertices_(vertices) {
 
 }
 
@@ -19,12 +19,12 @@ Tetrahedra::~Tetrahedra() {
 
 }
 
-const Tetrahedra::VertexArray& Tetrahedra::vertices() const {
+const Tetrahedra::VertexArray4& Tetrahedra::vertices() const {
   return vertices_;
 }
 
-vec3 Tetrahedra::vertex(const int i) const {
-  return vertices_[i];
+vec3 Tetrahedra::vertex(const int vertex_id) const {
+  return vertices_.col(vertex_id);
 }
 
 real_t Tetrahedra::surfaceArea() const {
@@ -34,9 +34,9 @@ real_t Tetrahedra::surfaceArea() const {
 
   for(int i=0; i < kNumFaces; i++) {
     vec3i face_indices = faceIndices(i);
-    vec3 a = vertices_[face_indices.x()];
-    vec3 b = vertices_[face_indices.y()];
-    vec3 c = vertices_[face_indices.z()];
+    vec3 a = vertices_.col(face_indices.x());
+    vec3 b = vertices_.col(face_indices.y());
+    vec3 c = vertices_.col(face_indices.z());
     vec3 cross = (b - a).cross(c - a);
 
     area += 0.5 * cross.norm();
@@ -53,14 +53,14 @@ real_t Tetrahedra::circumradius() const {
 	vec4 one(1.0, 1.0, 1.0, 1.0);
 
   vec4 len2;
-	for(int i=0;i < 4; i++) {
-		len2[i] = vertices_[i].squaredNorm();
+	for(int i=0;i < kNumVerticesPerCell; i++) {
+		len2[i] = vertices_.col(i).squaredNorm();
   }
 
 	//columns
-	vec4 cx(vertices_[0].x(), vertices_[1].x(), vertices_[2].x(), vertices_[3].x());
-	vec4 cy(vertices_[0].y(), vertices_[1].y(), vertices_[2].y(), vertices_[3].y());
-	vec4 cz(vertices_[0].z(), vertices_[1].z(), vertices_[2].z(), vertices_[3].z());
+	vec4 cx = vertices_.row(0);
+	vec4 cy = vertices_.row(1);
+	vec4 cz = vertices_.row(2);
 
 	real_t dx = 0.0;
   real_t dy = 0.0;
@@ -127,19 +127,19 @@ real_t Tetrahedra::aspectRatio() const {
 }
 
 vec3 Tetrahedra::centroid() const {
-  static const real_t ratio = 1.0 / static_cast<real_t>(kNumVertices);
+  static const real_t ratio = 1.0 / static_cast<real_t>(kNumVerticesPerCell);
 
-  vec3 sum = vertices_[0];
-  for(int i=1; i < kNumVertices; i++) {
-    sum = sum + vertices_[i];
+  vec3 sum = vertices_.col(0);
+  for(int i=1; i < kNumVerticesPerCell; i++) {
+    sum = sum + vertices_.col(i);
   }
   return sum * ratio;
 }
 
 real_t Tetrahedra::determinant() const {
-  const vec3 ab = vertices_[1] - vertices_[0];
-  const vec3 ac = vertices_[2] - vertices_[0];
-  const vec3 ad = vertices_[3] - vertices_[0];
+  const vec3 ab = vertices_.col(1) - vertices_.col(0);
+  const vec3 ac = vertices_.col(2) - vertices_.col(0);
+  const vec3 ad = vertices_.col(3) - vertices_.col(0);
 
   return ab.dot(ac.cross(ad));
 }
