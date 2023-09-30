@@ -23,6 +23,11 @@ const HalfFaceKey& Cell<NumFaces>::face(const int i) const {
 }
 
 template <int NumFaces>
+int Cell<NumFaces>::numFaces() {
+  return NumFaces;
+}
+
+template <int NumFaces>
 CellKey Cell<NumFaces>::key() const {
   std::array<uint64_t, NumFaces> hfaces_u64;
   for(int i=0; i < NumFaces; i++) {
@@ -43,5 +48,11 @@ bool Cell<NumFaces>::equals(const Cell& rhs) const {
   }
 
   return result;
+}
+
+template <int NumFaces>
+const Cell<NumFaces>& Cell<NumFaces>::operator=(const Cell& rhs) {
+  this->hfaces_ = rhs.hfaces_;
+  return *this;
 }
 

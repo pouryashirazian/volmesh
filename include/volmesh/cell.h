@@ -17,9 +17,13 @@ namespace volmesh {
 
     const HalfFaceKey& face(const int i) const;
 
+    static int numFaces();
+
     CellKey key() const;
 
     bool equals(const Cell& rhs) const;
+
+    const Cell& operator=(const Cell& rhs);
 
   private:
     HalfFaceArray hfaces_;

@@ -85,6 +85,64 @@ uint64_t TetMesh::countVertices() const {
   return vertices_.size() / 3;
 }
 
+const std::vector<TetMesh::TetCell> TetMesh::cell(const CellKey& in_cell_key) const {
+  std::vector<TetMesh::TetCell> result;
+  {
+    std::lock_guard<std::mutex> lck(cells_map_mutex_);
+    const auto it = cells_map_.find(in_cell_key);
+    if(it != cells_map_.end()) {
+      result = it->second;
+    } else {
+      throw std::invalid_argument("invalid cell key");
+    }
+  }
+
+  return result;
+}
+
+const std::vector<TetMesh::TetHalfFace> TetMesh::hface(const HalfFaceKey& in_hface_key) const {
+  std::vector<TetMesh::TetHalfFace> result;
+  {
+    std::lock_guard<std::mutex> lck(hfaces_map_mutex_);
+    const auto it = hfaces_map_.find(in_hface_key);
+    if(it != hfaces_map_.end()) {
+      result = it->second;
+    } else {
+      throw std::invalid_argument("invalid half-face key");
+    }
+  }
+
+  return result;
+}
+
+const HalfEdge TetMesh::hedge(const HalfEdgeKey& in_hedge_key) const {
+  HalfEdge result;
+  {
+    std::lock_guard<std::mutex> lck(hedges_map_mutex_);
+    const auto it = hedges_map_.find(in_hedge_key);
+    if(it != hedges_map_.end()) {
+      result = it->second;
+    } else {
+      throw std::invalid_argument("invalid half-edge key");
+    }
+  }
+
+  return result;
+}
+
+const vec3 TetMesh::vertex(const VertexKey& in_vertex_key) const {
+  vec3 result;
+
+  const uint64_t index = in_vertex_key.get();
+  if(index < countVertices()) {
+    result[0] = vertices_[index * 3];
+    result[1] = vertices_[index * 3 + 1];
+    result[2] = vertices_[index * 3 + 2];
+  }
+
+  return result;
+}
+
 bool TetMesh::insertNewCell(const vec4i& in_cell) {
   const int count_vertices = static_cast<int>(countVertices());
   for(int i=0; i < 4; i++) {

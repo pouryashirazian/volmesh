@@ -16,9 +16,11 @@ namespace volmesh {
     explicit HalfFace(const HalfEdgeArray& in_hedges);
     ~HalfFace();
 
-    int numEdges() const;
+    void copyFrom(const HalfFace& rhs);
 
     const HalfEdgeKey& edge(const int i) const;
+
+    static int numEdges();
 
     HalfFaceKey key() const;
 

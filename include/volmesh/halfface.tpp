@@ -12,13 +12,18 @@ HalfFace<NumEdges>::~HalfFace() {
 }
 
 template <int NumEdges>
-int HalfFace<NumEdges>::numEdges() const {
-  return NumEdges;
+void HalfFace<NumEdges>::copyFrom(const HalfFace& rhs) {
+  hedges_ = rhs.hedges_;
 }
 
 template <int NumEdges>
 const HalfEdgeKey& HalfFace<NumEdges>::edge(const int i) const {
   return hedges_[i];
+}
+
+template <int NumEdges>
+int HalfFace<NumEdges>::numEdges() {
+  return NumEdges;
 }
 
 template <int NumEdges>

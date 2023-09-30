@@ -43,6 +43,11 @@ namespace volmesh {
     uint64_t countHalfEdges() const;
     uint64_t countVertices() const;
 
+    const std::vector<TetCell> cell(const CellKey& in_cell_key) const;
+    const std::vector<TetHalfFace> hface(const HalfFaceKey& in_hface_key) const;
+    const HalfEdge hedge(const HalfEdgeKey& in_hedge_key) const;
+    const vec3 vertex(const VertexKey& in_vertex_key) const;
+
   private:
     bool insertNewCell(const vec4i& in_cell);
     void insertHalfEdgeIfNotExists(const HalfEdge& in_hedge);
@@ -50,16 +55,16 @@ namespace volmesh {
     void insertCellIfNotExists(const TetCell& in_cell);
 
   private:
-    std::unordered_map<size_t, std::vector<TetCell>> cells_map_;
-    std::mutex cells_map_mutex_;
+    std::unordered_map<uint64_t, std::vector<TetCell>> cells_map_;
+    mutable std::mutex cells_map_mutex_;
     std::atomic<uint64_t> count_hashcollided_cells_ = {0};
 
-    std::unordered_map<size_t, std::vector<TetHalfFace> > hfaces_map_;
-    std::mutex hfaces_map_mutex_;
+    std::unordered_map<uint64_t, std::vector<TetHalfFace> > hfaces_map_;
+    mutable std::mutex hfaces_map_mutex_;
     std::atomic<uint64_t> count_hashcollided_hfaces_ = {0};
 
-    std::unordered_map<size_t, HalfEdge> hedges_map_;
-    std::mutex hedges_map_mutex_;
+    std::unordered_map<uint64_t, HalfEdge> hedges_map_;
+    mutable std::mutex hedges_map_mutex_;
 
     std::vector<real_t> vertices_;
     std::vector<real_t> normals_;
