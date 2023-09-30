@@ -9,16 +9,20 @@ namespace volmesh {
   template <int NumFaces = 4>
   class Cell {
   public:
-    Cell();
-    explicit Cell(const Cell& rhs);
-    explicit Cell(const HalfFaceKey faces_[NumFaces]);
+    typedef std::array<HalfFaceKey, NumFaces> HalfFaceArray;
+
+    Cell(const Cell& rhs);
+    explicit Cell(const HalfFaceArray& in_hfaces);
     ~Cell();
 
     const HalfFaceKey& face(const int i) const;
 
+    CellKey key() const;
+
+    bool equals(const Cell& rhs) const;
 
   private:
-    HalfFaceKey faces_[NumFaces];
+    HalfFaceArray hfaces_;
   };
 
   #include "volmesh/cell.tpp"

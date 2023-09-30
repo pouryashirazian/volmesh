@@ -2,11 +2,15 @@
 
 using namespace volmesh;
 
+BaseKey::BaseKey(const BaseKey& rhs): key_(rhs.key_) {
+
+}
+
 bool BaseKey::valid() const {
   return key_ != volmesh::kSentinelKey;
 }
 
-uint32_t BaseKey::get() const {
+uint64_t BaseKey::get() const {
   return key_;
 }
 
@@ -27,18 +31,18 @@ bool BaseKey::operator>(const BaseKey& rhs) const {
   return key_ > rhs.key_;
 }
 
-VertexKey VertexKey::create(const uint32_t key) {
+VertexKey VertexKey::create(const uint64_t key) {
   return VertexKey(key);
 }
 
-HalfEdgeKey HalfEdgeKey::create(const uint32_t key) {
+HalfEdgeKey HalfEdgeKey::create(const uint64_t key) {
   return HalfEdgeKey(key);
 }
 
-HalfFaceKey HalfFaceKey::create(const uint32_t key) {
+HalfFaceKey HalfFaceKey::create(const uint64_t key) {
   return HalfFaceKey(key);
 }
 
-CellKey CellKey::create(const uint32_t key) {
+CellKey CellKey::create(const uint64_t key) {
   return CellKey(key);
 }

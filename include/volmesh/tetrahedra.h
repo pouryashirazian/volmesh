@@ -23,6 +23,8 @@ namespace volmesh {
 
     vec3 vertex(const int vertex_id) const;
 
+    real_t faceArea(const int face_id) const;
+
     real_t surfaceArea() const;
 
     /*
@@ -40,9 +42,11 @@ namespace volmesh {
 
     real_t volume() const;
 
-    static vec3i faceIndices(const int face_id);
+    static vec3i faceVertexIdsLut(const int face_id);
 
-    static vec2i edgeIndices(const int edge_id);
+    static vec3i faceHalfEdgeIdsLut(const int face_id);
+
+    static vec2i edgeVertexIdsLut(const int edge_id);
 
   private:
     VertexArray4 vertices_;

@@ -3,6 +3,10 @@
 
 using namespace volmesh;
 
+const int Tetrahedra::kNumVerticesPerCell;
+const int Tetrahedra::kNumFaces;
+const int Tetrahedra::kNumEdges;
+
 Tetrahedra::Tetrahedra() {
 
 }
@@ -27,19 +31,27 @@ vec3 Tetrahedra::vertex(const int vertex_id) const {
   return vertices_.col(vertex_id);
 }
 
-real_t Tetrahedra::surfaceArea() const {
-  //The surface area of a Tetrahedra is the sum of the surface area of its four triangular faces.
+real_t Tetrahedra::faceArea(const int face_id) const {
   //Per each triangle with vertices a,b,c the area is calculated as: 0.5 * cross(ab, ac)
-  real_t area = 0.0;
-
-  for(int i=0; i < kNumFaces; i++) {
-    vec3i face_indices = faceIndices(i);
+  real_t face_area = 0.0;
+  if(face_id >= 0 && face_id < kNumFaces) {
+    vec3i face_indices = faceVertexIdsLut(face_id);
     vec3 a = vertices_.col(face_indices.x());
     vec3 b = vertices_.col(face_indices.y());
     vec3 c = vertices_.col(face_indices.z());
     vec3 cross = (b - a).cross(c - a);
 
-    area += 0.5 * cross.norm();
+    face_area = 0.5 * cross.norm();
+  }
+
+  return face_area;
+}
+
+real_t Tetrahedra::surfaceArea() const {
+  //The surface area of a Tetrahedra is the sum of the surface area of its four triangular faces.
+  real_t area = 0.0;
+  for(int i=0; i < kNumFaces; i++) {
+    area += faceArea(i);
   }
 
   return area;
@@ -148,21 +160,31 @@ real_t Tetrahedra::volume() const {
   return static_cast<real_t>(1.0 / 6.0) * fabs(determinant());
 }
 
-vec3i Tetrahedra::faceIndices(const int face_id) {
-  static const vec3i faceIndicesLut[kNumFaces] = { {1, 2, 3}, {2, 0, 3}, {3, 0, 1}, {1, 0, 2} };
+vec3i Tetrahedra::faceVertexIdsLut(const int face_id) {
+  static const vec3i kFaceVertexIdsLut[kNumFaces] = { {1, 2, 3}, {2, 0, 3}, {3, 0, 1}, {1, 0, 2} };
 
   if(face_id >= 0 && face_id < kNumFaces) {
-    return faceIndicesLut[face_id];
+    return kFaceVertexIdsLut[face_id];
   } else {
     throw std::out_of_range("The supplied face index is out of range");
   }
 }
 
-vec2i Tetrahedra::edgeIndices(const int edge_id) {
-  static const vec2i edgeIndicesLut[kNumEdges] = { {1, 2}, {2, 3}, {3, 1}, {2, 0}, {0, 3}, {0, 1} };
+vec3i Tetrahedra::faceHalfEdgeIdsLut(const int face_id) {
+  static const vec3i kFaceHalfEdgeIdsLut[kNumFaces] = { {0, 2, 4}, {6, 8, 3}, {9, 10, 5}, {11, 7, 1} };
+
+  if(face_id >= 0 && face_id < kNumFaces) {
+    return kFaceHalfEdgeIdsLut[face_id];
+  } else {
+    throw std::out_of_range("The supplied face index is out of range");
+  }
+}
+
+vec2i Tetrahedra::edgeVertexIdsLut(const int edge_id) {
+  static const vec2i kEdgeVertexIdsLut[kNumEdges] = { {1, 2}, {2, 3}, {3, 1}, {2, 0}, {0, 3}, {0, 1} };
 
   if(edge_id >=0 && edge_id < kNumEdges) {
-    return edgeIndicesLut[edge_id];
+    return kEdgeVertexIdsLut[edge_id];
   } else {
     throw std::out_of_range("The supplied edge index is out of range");
   }

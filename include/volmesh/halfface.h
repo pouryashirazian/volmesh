@@ -1,25 +1,33 @@
 #pragma once
 
 #include "volmesh/halfedge.h"
+#include "volmesh/multikeyhash.h"
+
+#include <array>
 
 namespace volmesh {
 
   template <int NumEdges = 3>
   class HalfFace {
   public:
-    HalfFace();
-    HalfFace(const HalfFace& rhs);
+    typedef std::array<HalfEdgeKey, NumEdges> HalfEdgeArray;
 
-    void copyFrom(const HalfFace& rhs);
+    HalfFace(const HalfFace& rhs);
+    explicit HalfFace(const HalfEdgeArray& in_hedges);
+    ~HalfFace();
 
     int numEdges() const;
 
     const HalfEdgeKey& edge(const int i) const;
 
+    HalfFaceKey key() const;
+
+    bool equals(const HalfFace& rhs) const;
+
     const HalfFace& operator=(const HalfFace& rhs);
 
   private:
-    HalfEdgeKey edges_[NumEdges];
+    HalfEdgeArray hedges_;
   };
 
   #include "volmesh/halfface.tpp"
