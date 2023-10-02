@@ -6,27 +6,26 @@
 
 namespace volmesh {
 
-  template <int NumFaces = 4>
+  template <int NumFaces>
   class Cell {
   public:
-    typedef std::array<HalfFaceKey, NumFaces> HalfFaceArray;
+    typedef std::array<HalfFaceIndex, NumFaces> HalfFaceIndexArray;
 
+    Cell();
     Cell(const Cell& rhs);
-    explicit Cell(const HalfFaceArray& in_hfaces);
+    explicit Cell(const HalfFaceIndexArray& in_hfaces);
     ~Cell();
 
-    const HalfFaceKey& face(const int i) const;
+    const HalfFaceIndex& halfFaceIndex(const int i) const;
 
     static int numFaces();
-
-    CellKey key() const;
 
     bool equals(const Cell& rhs) const;
 
     const Cell& operator=(const Cell& rhs);
 
   private:
-    HalfFaceArray hfaces_;
+    HalfFaceIndexArray half_face_indices_;
   };
 
   #include "volmesh/cell.tpp"

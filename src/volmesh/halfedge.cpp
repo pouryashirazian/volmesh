@@ -2,7 +2,7 @@
 
 using namespace volmesh;
 
-HalfEdge::HalfEdge():start_(VertexKey::create(kSentinelKey)), end_(VertexKey::create(kSentinelKey)) {
+HalfEdge::HalfEdge():start_(VertexIndex::create(kSentinelIndex)), end_(VertexIndex::create(kSentinelIndex)) {
 
 }
 
@@ -10,7 +10,7 @@ HalfEdge::HalfEdge(const HalfEdge& rhs):start_(rhs.start_), end_(rhs.end_) {
 
 }
 
-HalfEdge::HalfEdge(const VertexKey& start, const VertexKey& end):start_(start), end_(end) {
+HalfEdge::HalfEdge(const VertexIndex& start, const VertexIndex& end):start_(start), end_(end) {
 
 }
 
@@ -18,17 +18,12 @@ HalfEdge::~HalfEdge() {
 
 }
 
-const VertexKey& HalfEdge::start() const {
+const VertexIndex& HalfEdge::start() const {
   return start_;
 }
 
-const VertexKey& HalfEdge::end() const {
+const VertexIndex& HalfEdge::end() const {
   return end_;
-}
-
-HalfEdgeKey HalfEdge::key() const {
-  const uint64_t k = (start_.get() << 32) | end_.get();
-  return HalfEdgeKey::create(k);
 }
 
 bool HalfEdge::equals(const HalfEdge& rhs) const {

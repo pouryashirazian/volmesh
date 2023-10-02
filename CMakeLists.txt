@@ -19,7 +19,7 @@ set(LIB_NAME "volmesh")
 add_library(${LIB_NAME}
             STATIC
             src/volmesh/halfedge.cpp
-            src/volmesh/keys.cpp
+            src/volmesh/index.cpp
             src/volmesh/sampletetmeshes.cpp
             #  src/volmesh/stlserializer.cpp
             src/volmesh/tetmesh.cpp

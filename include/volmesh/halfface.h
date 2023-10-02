@@ -7,29 +7,28 @@
 
 namespace volmesh {
 
-  template <int NumEdges = 3>
+  template <int NumEdges>
   class HalfFace {
   public:
-    typedef std::array<HalfEdgeKey, NumEdges> HalfEdgeArray;
+    typedef std::array<HalfEdgeIndex, NumEdges> HalfEdgeIndexArray;
 
+    HalfFace();
     HalfFace(const HalfFace& rhs);
-    explicit HalfFace(const HalfEdgeArray& in_hedges);
+    explicit HalfFace(const HalfEdgeIndexArray& in_hedges);
     ~HalfFace();
 
     void copyFrom(const HalfFace& rhs);
 
-    const HalfEdgeKey& edge(const int i) const;
+    const HalfEdgeIndex& halfEdgeIndex(const int i) const;
 
     static int numEdges();
-
-    HalfFaceKey key() const;
 
     bool equals(const HalfFace& rhs) const;
 
     const HalfFace& operator=(const HalfFace& rhs);
 
   private:
-    HalfEdgeArray hedges_;
+    HalfEdgeIndexArray half_edge_indices_;
   };
 
   #include "volmesh/halfface.tpp"

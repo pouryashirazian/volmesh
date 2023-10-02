@@ -1,10 +1,17 @@
 template <int NumFaces>
-Cell<NumFaces>::Cell(const Cell& rhs):hfaces_(rhs.hfaces_) {
+Cell<NumFaces>::Cell() {
+  for(int i=0; i < NumFaces; i++) {
+    half_face_indices_[i] = HalfFaceIndex::create(kSentinelIndex);
+  }
+}
+
+template <int NumFaces>
+Cell<NumFaces>::Cell(const Cell& rhs):half_face_indices_(rhs.half_face_indices_) {
 
 }
 
 template <int NumFaces>
-Cell<NumFaces>::Cell(const Cell::HalfFaceArray& in_hfaces):hfaces_(in_hfaces) {
+Cell<NumFaces>::Cell(const Cell::HalfFaceIndexArray& in_hfaces):half_face_indices_(in_hfaces) {
 
 }
 
@@ -14,11 +21,11 @@ Cell<NumFaces>::~Cell() {
 }
 
 template <int NumFaces>
-const HalfFaceKey& Cell<NumFaces>::face(const int i) const {
+const HalfFaceIndex& Cell<NumFaces>::halfFaceIndex(const int i) const {
   if(i < NumFaces) {
-    return hfaces_[i];
+    return half_face_indices_[i];
   } else {
-    throw std::out_of_range("invalid face index");
+    throw std::out_of_range("invalid half face index");
   }
 }
 
@@ -28,20 +35,10 @@ int Cell<NumFaces>::numFaces() {
 }
 
 template <int NumFaces>
-CellKey Cell<NumFaces>::key() const {
-  std::array<uint64_t, NumFaces> hfaces_u64;
-  for(int i=0; i < NumFaces; i++) {
-    hfaces_u64[i] = hfaces_[i].get();
-  }
-
-  return CellKey::create(MultiKeyHash<NumFaces, uint64_t>()(hfaces_u64));
-}
-
-template <int NumFaces>
 bool Cell<NumFaces>::equals(const Cell& rhs) const {
   bool result = true;
   for(int i=0; i < NumFaces; i++) {
-    if(hfaces_[i] != rhs.hfaces_[i]) {
+    if(half_face_indices_[i] != rhs.half_face_indices_[i]) {
       result = false;
       break;
     }
@@ -52,7 +49,7 @@ bool Cell<NumFaces>::equals(const Cell& rhs) const {
 
 template <int NumFaces>
 const Cell<NumFaces>& Cell<NumFaces>::operator=(const Cell& rhs) {
-  this->hfaces_ = rhs.hfaces_;
+  this->half_face_indices_ = rhs.half_face_indices_;
   return *this;
 }
 

@@ -11,7 +11,7 @@ TEST(TetMesh, OneCell) {
   createOneTetrahedra(mesh);
 
   EXPECT_EQ(mesh.countCells(), 1);
-  EXPECT_EQ(mesh.countHalfFaces(), Tetrahedra::kNumFaces);
+  EXPECT_EQ(mesh.countHalfFaces(), Tetrahedra::kNumFaces * 2);
   EXPECT_EQ(mesh.countEdges(), Tetrahedra::kNumEdges);
   EXPECT_EQ(mesh.countHalfEdges(), Tetrahedra::kNumEdges * 2);
   EXPECT_EQ(mesh.countVertices(), Tetrahedra::kNumVerticesPerCell);

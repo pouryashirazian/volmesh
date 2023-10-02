@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "volmesh/keys.h"
+#include "volmesh/index.h"
 
 namespace volmesh {
 
@@ -10,21 +10,19 @@ namespace volmesh {
   public:
     HalfEdge();
     HalfEdge(const HalfEdge& rhs);
-    explicit HalfEdge(const VertexKey& start, const VertexKey& end);
+    explicit HalfEdge(const VertexIndex& start, const VertexIndex& end);
     ~HalfEdge();
 
-    const VertexKey& start() const;
-    const VertexKey& end() const;
-
-    HalfEdgeKey key() const;
+    const VertexIndex& start() const;
+    const VertexIndex& end() const;
 
     bool equals(const HalfEdge& rhs) const;
 
     const HalfEdge& operator=(const HalfEdge& rhs);
 
   private:
-    VertexKey start_;
-    VertexKey end_;
+    VertexIndex start_;
+    VertexIndex end_;
   };
 
 }
