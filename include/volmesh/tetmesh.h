@@ -1,6 +1,7 @@
 #pragma once
 
 #include "volmesh/volmesh.h"
+#include "volmesh/cube.h"
 
 namespace volmesh {
 
@@ -22,7 +23,10 @@ namespace volmesh {
                      const std::vector<vec4i>& in_cells);
     virtual ~TetMesh();
 
-    CellIndex insertNewCell(const vec4i& in_cell);
+    CellIndex insertTetrahedra(const vec4i& in_tetrahedra_cell);
+
+    bool insertCube(const std::array<int, Cube::kNumVerticesPerCell>& in_cube_cell,
+                    std::array<CellIndex, Cube::kNumFittingTetrahedra>& out_tet_cell_indices);
 
     bool readFromList(const std::vector<vec3>& in_vertices,
                       const std::vector<vec4i>& in_cells);

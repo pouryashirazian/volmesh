@@ -8,8 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # find_package(cxxopts REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
-# message(FATAL_ERROR "EIGEN3_INCLUDE_DIR = ${EIGEN3_INCLUDE_DIR}")
-# INCLUDE_DIRECTORIES ( "${EIGEN3_INCLUDE_DIR}" )
+find_package(fmt CONFIG REQUIRED)
 
 enable_testing()
 # find_package(GTest CONFIG REQUIRED)
@@ -18,6 +17,7 @@ set(LIB_NAME "volmesh")
 
 add_library(${LIB_NAME}
             STATIC
+            src/volmesh/cube.cpp
             src/volmesh/halfedge.cpp
             src/volmesh/index.cpp
             src/volmesh/sampletetmeshes.cpp
@@ -30,6 +30,7 @@ target_include_directories(${LIB_NAME} PRIVATE
 
 target_link_libraries(${LIB_NAME}
                       PRIVATE
-                      Eigen3::Eigen)
+                      Eigen3::Eigen
+                      fmt::fmt)
 
 add_subdirectory(test)

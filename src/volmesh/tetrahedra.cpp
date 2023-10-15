@@ -1,6 +1,8 @@
 
 #include "volmesh/tetrahedra.h"
 
+#include <fmt/core.h>
+
 using namespace volmesh;
 
 const int Tetrahedra::kNumVerticesPerCell;
@@ -166,7 +168,10 @@ vec3i Tetrahedra::faceVertexIdsLut(const int face_id) {
   if(face_id >= 0 && face_id < kNumFaces) {
     return kFaceVertexIdsLut[face_id];
   } else {
-    throw std::out_of_range("The supplied face index is out of range");
+    throw std::out_of_range(fmt::format("The supplied face id {} is out of range. Accepted face id range is [{}, {}]",
+                                        face_id,
+                                        0,
+                                        kNumFaces - 1));
   }
 }
 
@@ -176,7 +181,10 @@ vec3i Tetrahedra::faceHalfEdgeIdsLut(const int face_id) {
   if(face_id >= 0 && face_id < kNumFaces) {
     return kFaceHalfEdgeIdsLut[face_id];
   } else {
-    throw std::out_of_range("The supplied face index is out of range");
+    throw std::out_of_range(fmt::format("The supplied face id {} is out of range. Accepted face id range is [{}, {}]",
+                                        face_id,
+                                        0,
+                                        kNumFaces - 1));
   }
 }
 
@@ -186,6 +194,9 @@ vec2i Tetrahedra::edgeVertexIdsLut(const int edge_id) {
   if(edge_id >=0 && edge_id < kNumEdges) {
     return kEdgeVertexIdsLut[edge_id];
   } else {
-    throw std::out_of_range("The supplied edge index is out of range");
+    throw std::out_of_range(fmt::format("The supplied edge id {} is out of range. Accepted edge id range is [{}, {}]",
+                                        edge_id,
+                                        0,
+                                        kNumEdges - 1));
   }
 }

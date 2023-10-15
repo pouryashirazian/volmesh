@@ -20,11 +20,11 @@ TetMesh::~TetMesh() {
   clear();
 }
 
-CellIndex TetMesh::insertNewCell(const vec4i& in_cell) {
+CellIndex TetMesh::insertTetrahedra(const vec4i& in_tetrahedra_cell) {
   CellIndex cell_index = CellIndex::create(kSentinelIndex);
   const int count_vertices = static_cast<int>(countVertices());
   for(int i=0; i < 4; i++) {
-    const int vertex_id = in_cell.coeff(i);
+    const int vertex_id = in_tetrahedra_cell.coeff(i);
     if(vertex_id < 0 || vertex_id >= count_vertices) {
       throw std::out_of_range("Some of the vertex indices for the supplied cell are out of range");
     }
@@ -34,11 +34,11 @@ CellIndex TetMesh::insertNewCell(const vec4i& in_cell) {
   uint32_t half_edge_keys[Tetrahedra::kNumEdges * 2];
   for(int i=0; i < Tetrahedra::kNumEdges; i++) {
     const vec2i edge_vertices_lut = Tetrahedra::edgeVertexIdsLut(i);
-    HalfEdge forward_hedge(VertexIndex::create(in_cell.coeff(edge_vertices_lut[0])),
-                           VertexIndex::create(in_cell.coeff(edge_vertices_lut[1])));
+    HalfEdge forward_hedge(VertexIndex::create(in_tetrahedra_cell.coeff(edge_vertices_lut[0])),
+                           VertexIndex::create(in_tetrahedra_cell.coeff(edge_vertices_lut[1])));
 
-    HalfEdge backward_hedge(VertexIndex::create(in_cell.coeff(edge_vertices_lut[1])),
-                            VertexIndex::create(in_cell.coeff(edge_vertices_lut[0])));
+    HalfEdge backward_hedge(VertexIndex::create(in_tetrahedra_cell.coeff(edge_vertices_lut[1])),
+                            VertexIndex::create(in_tetrahedra_cell.coeff(edge_vertices_lut[0])));
 
     half_edge_keys[i * 2] = insertHalfEdgeIfNotExists(forward_hedge);
     half_edge_keys[i * 2 + 1] = insertHalfEdgeIfNotExists(backward_hedge);
@@ -71,6 +71,26 @@ CellIndex TetMesh::insertNewCell(const vec4i& in_cell) {
   return cell_index;
 }
 
+bool TetMesh::insertCube(const std::array<int, Cube::kNumVerticesPerCell>& in_cube_cell,
+                         std::array<CellIndex, Cube::kNumFittingTetrahedra>& out_tet_cell_indices) {
+  std::array<vec4i, Cube::kNumFittingTetrahedra> tet_cells;
+  tet_cells[0] = vec4i(in_cube_cell[Cube::VertexLocationId::LBN], in_cube_cell[Cube::VertexLocationId::LTN], in_cube_cell[Cube::VertexLocationId::RBN], in_cube_cell[Cube::VertexLocationId::LBF]);
+  tet_cells[1] = vec4i(in_cube_cell[Cube::VertexLocationId::RTN], in_cube_cell[Cube::VertexLocationId::LTN], in_cube_cell[Cube::VertexLocationId::LBF], in_cube_cell[Cube::VertexLocationId::RBN]);
+  tet_cells[2] = vec4i(in_cube_cell[Cube::VertexLocationId::RTN], in_cube_cell[Cube::VertexLocationId::LTN], in_cube_cell[Cube::VertexLocationId::LTF], in_cube_cell[Cube::VertexLocationId::LBF]);
+  tet_cells[3] = vec4i(in_cube_cell[Cube::VertexLocationId::RTN], in_cube_cell[Cube::VertexLocationId::RBN], in_cube_cell[Cube::VertexLocationId::LBF], in_cube_cell[Cube::VertexLocationId::RBF]);
+  tet_cells[4] = vec4i(in_cube_cell[Cube::VertexLocationId::RTN], in_cube_cell[Cube::VertexLocationId::LBF], in_cube_cell[Cube::VertexLocationId::LTF], in_cube_cell[Cube::VertexLocationId::RBF]);
+  tet_cells[5] = vec4i(in_cube_cell[Cube::VertexLocationId::RTN], in_cube_cell[Cube::VertexLocationId::LTF], in_cube_cell[Cube::VertexLocationId::RTF], in_cube_cell[Cube::VertexLocationId::RBF]);
+
+  bool result = true;
+  for(int i=0; i < Cube::kNumFittingTetrahedra; i++) {
+    out_tet_cell_indices[i] = insertTetrahedra(tet_cells[i]);
+
+    result &= out_tet_cell_indices[i].valid();
+  }
+
+  return result;
+}
+
 bool TetMesh::readFromList(const std::vector<vec3>& in_vertices,
                            const std::vector<vec4i>& in_cells) {
   if((in_vertices.size() == 0)||(in_cells.size() == 0)) {
@@ -81,7 +101,7 @@ bool TetMesh::readFromList(const std::vector<vec3>& in_vertices,
 
   bool result = insertAllVertices(in_vertices);
   for(auto it = in_cells.begin(); it != in_cells.end(); it++) {
-    insertNewCell(*it);
+    insertTetrahedra(*it);
   }
 
   result &= (countCells() == in_cells.size());

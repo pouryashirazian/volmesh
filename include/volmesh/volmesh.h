@@ -32,7 +32,6 @@ namespace volmesh {
     void copyFrom(const VolMesh& rhs);
     void clear();
 
-
     uint32_t countCells() const;
     uint32_t countHalfFaces() const;
     uint32_t countEdges() const;

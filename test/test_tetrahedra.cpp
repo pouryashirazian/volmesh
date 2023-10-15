@@ -61,3 +61,15 @@ TEST(Tetrahedra, DeterminantVolume) {
   EXPECT_NEAR(volume, volume_gt, kEpsilon);
 }
 
+TEST(Tetrahedra, faceVertexIdsLut) {
+  static const vec3i kFaceVertexIdsLut[Tetrahedra::kNumFaces] = { {1, 2, 3}, {2, 0, 3}, {3, 0, 1}, {1, 0, 2} };
+
+  EXPECT_EQ(kFaceVertexIdsLut[0], Tetrahedra::faceVertexIdsLut(0));
+  EXPECT_EQ(kFaceVertexIdsLut[1], Tetrahedra::faceVertexIdsLut(1));
+  EXPECT_EQ(kFaceVertexIdsLut[2], Tetrahedra::faceVertexIdsLut(2));
+  EXPECT_EQ(kFaceVertexIdsLut[3], Tetrahedra::faceVertexIdsLut(3));
+
+  EXPECT_ANY_THROW(Tetrahedra::faceVertexIdsLut(-1));
+  EXPECT_ANY_THROW(Tetrahedra::faceVertexIdsLut(4));
+}
+
