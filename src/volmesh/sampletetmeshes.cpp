@@ -1,5 +1,7 @@
 #include "volmesh/sampletetmeshes.h"
 #include "volmesh/cube.h"
+#include "volmesh/mathutils.h"
+#include "volmesh/tetrahedra.h"
 
 #include <vector>
 #include <iostream>
@@ -46,21 +48,24 @@ namespace volmesh {
                        const int nz,
                        const real_t cellsize) {
     if(nx < 2 || ny < 2 || nz < 2) {
-      std::cerr << fmt::format("Invalid grid dimension supplied [{} {} {}]", nx, ny, nz) << std::endl;
-      return false;
+      throw std::invalid_argument(fmt::format("Invalid grid dimension supplied [{} {} {}]", nx, ny, nz));
     }
 
-    std::vector<vec3> vertices;
-    std::vector<vec4i> tet_cells;
+    if(cellsize == (real_t)0.0) {
+      throw std::invalid_argument(fmt::format("requested cellsize can not be zero [{}]", cellsize));
+    }
 
-	  vec3 start = vec3(- static_cast<real_t>(nx)/2.0f, 0.0f, - static_cast<real_t>(nz)/2.0f) * cellsize;
+    std::vector<vec3> vertex_list;
+    std::vector<vec4i> tetcells_list;
+
+    vec3 start = vec3(- static_cast<real_t>(nx)/2.0f, 0.0f, - static_cast<real_t>(nz)/2.0f) * cellsize;
 
     //add all nodes
     for(int i=0; i < nx; i++) {
       for(int j=0; j < ny; j++) {
         for(int k=0; k < nz; k++) {
           vec3 v = start + vec3(i, j, k) * cellsize;
-          vertices.push_back(v);
+          vertex_list.push_back(v);
         }
       }
     }
@@ -69,7 +74,7 @@ namespace volmesh {
 
     //add all elements
     const int total_voxels = (nx - 1) * (ny - 1) * (nz - 1);
-    tet_cells.resize(total_voxels * 6);
+    tetcells_list.resize(total_voxels * 6);
 
     int voxel_id = 0;
     for(int i=0; i < nx-1; i++) {
@@ -88,27 +93,144 @@ namespace volmesh {
           cube_indices[Cube::VertexLocationId::RTN] = (i+1) * ny * nz + (j+1) * nz + k;
           cube_indices[Cube::VertexLocationId::RTF] = (i+1) * ny * nz + (j+1) * nz + k + 1;
 
-          tet_cells[voxel_id * 6]     = vec4i(cube_indices[Cube::VertexLocationId::LBN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::RBN], cube_indices[Cube::VertexLocationId::LBF]);
-          tet_cells[voxel_id * 6 + 1] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::RBN]);
-          tet_cells[voxel_id * 6 + 2] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::LBF]);
-          tet_cells[voxel_id * 6 + 3] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::RBN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::RBF]);
-          tet_cells[voxel_id * 6 + 4] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::RBF]);
-          tet_cells[voxel_id * 6 + 5] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::RTF], cube_indices[Cube::VertexLocationId::RBF]);
+          tetcells_list[voxel_id * 6]     = vec4i(cube_indices[Cube::VertexLocationId::LBN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::RBN], cube_indices[Cube::VertexLocationId::LBF]);
+          tetcells_list[voxel_id * 6 + 1] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::RBN]);
+          tetcells_list[voxel_id * 6 + 2] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::LBF]);
+          tetcells_list[voxel_id * 6 + 3] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::RBN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::RBF]);
+          tetcells_list[voxel_id * 6 + 4] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::RBF]);
+          tetcells_list[voxel_id * 6 + 5] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::RTF], cube_indices[Cube::VertexLocationId::RBF]);
 
           voxel_id ++;
         }
       }
     }
 
-	  return inout_mesh.readFromList(vertices, tet_cells);
+    return inout_mesh.readFromList(vertex_list, tetcells_list);
   }
 
   bool createSphericalShell(TetMesh& inout_mesh,
                             const int horizontal_slices /* = 8 */,
                             const int vertical_slices /* = 8 */,
-                            const double radius /* = 2.0 */,
-                            const double shell_tickness /*= 0.3 */) {
+                            const real_t radius /* = 2.0 */,
+                            const real_t shell_tickness /*= 0.3 */) {
+    if(horizontal_slices <= 0 || vertical_slices <= 0) {
+      throw std::invalid_argument(fmt::format("Either the horizontal or the vertical slice count is invalid. HS={}, VS={}",
+                                  horizontal_slices,
+                                  vertical_slices));
+    }
 
+    if(radius == (real_t)0.0 || shell_tickness == (real_t)0.0) {
+      throw std::invalid_argument(fmt::format("Either the radius or the shell thickness is invalid. radius={}, shell_thickness={}",
+                                  radius,
+                                  shell_tickness));
+    }
+
+    const real_t inv_vslices = 1.0 / static_cast<real_t>(vertical_slices);
+    const real_t inv_hslices = 1.0 / static_cast<real_t>(horizontal_slices);
+
+    std::vector<vec3> vertex_list;
+    vertex_list.reserve((vertical_slices + 1 ) * horizontal_slices * 2);
+
+    //compute vertices on the outer surface of the shell
+    const size_t outershell_start_vertex_id = vertex_list.size();
+    for(int v=0; v < vertical_slices + 1; v++) {
+      const real_t phi = volmesh::DegToRad(v * inv_vslices * 180.0);
+
+      for(int h=0; h < horizontal_slices; h++) {
+        const real_t omega = volmesh::DegToRad(h * inv_hslices * 360.0);
+
+        //compute vertex compenents
+        vec3 v(radius * sin(phi) * sin(omega),
+               radius * sin(phi) * cos(omega),
+               radius * cos(phi));
+
+        vertex_list.push_back(v);
+      }
+    }
+
+    //compute vertices on the inner surface of the shell
+    const real_t inner_radius = radius - shell_tickness;
+    for(int v=0; v < vertical_slices + 1; v++) {
+      const real_t phi = volmesh::DegToRad(v * inv_vslices * 180.0);
+
+      for(int h=0; h < horizontal_slices; h++) {
+        const real_t omega = volmesh::DegToRad(h * inv_hslices * 360.0);
+
+        //compute vertex compenents
+        vec3 v(inner_radius * sin(phi) * sin(omega),
+               inner_radius * sin(phi) * cos(omega),
+               inner_radius * cos(phi));
+
+        vertex_list.push_back(v);
+      }
+    }
+
+    std::vector<vec4i> tetcells_list;
+    tetcells_list.reserve(vertical_slices * horizontal_slices * 6);
+
+    int voxel_id = 0;
+
+    //Indices
+    int cube_indices[8];
+
+    //Add all elements
+    for(int v=0; v < vertical_slices; v++) {
+      for(int h=0; h < horizontal_slices; h++) {
+
+        //top
+        cube_indices[Cube::VertexLocationId::LTN] = h + v * horizontal_slices;
+        cube_indices[Cube::VertexLocationId::LTF] = h + v * horizontal_slices + 1;
+        cube_indices[Cube::VertexLocationId::RTN] = h + (v+1) * horizontal_slices;
+        cube_indices[Cube::VertexLocationId::RTF] = h + (v+1) * horizontal_slices + 1;
+
+        if(h == horizontal_slices - 1) {
+          cube_indices[Cube::VertexLocationId::LTF] = v * horizontal_slices;
+          cube_indices[Cube::VertexLocationId::RTF] = (v+1) * horizontal_slices;
+        }
+
+        //bottom
+        cube_indices[Cube::VertexLocationId::LBN] = outershell_start_vertex_id + h + v * horizontal_slices;
+        cube_indices[Cube::VertexLocationId::LBF] = outershell_start_vertex_id + cube_indices[Cube::VertexLocationId::LTN] + 1;
+        cube_indices[Cube::VertexLocationId::RBN] = outershell_start_vertex_id + h + (v+1) * horizontal_slices;
+        cube_indices[Cube::VertexLocationId::RBF] = outershell_start_vertex_id + cube_indices[Cube::VertexLocationId::RTN] + 1;
+
+        if(h == horizontal_slices - 1) {
+          cube_indices[Cube::VertexLocationId::LBF] = outershell_start_vertex_id + v * horizontal_slices;
+          cube_indices[Cube::VertexLocationId::RBF] = outershell_start_vertex_id + (v+1) * horizontal_slices;
+        }
+
+        //add elements
+        tetcells_list[voxel_id * 6]     = vec4i(cube_indices[Cube::VertexLocationId::LBN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::RBN], cube_indices[Cube::VertexLocationId::LBF]);
+        tetcells_list[voxel_id * 6 + 1] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::RBN]);
+        tetcells_list[voxel_id * 6 + 2] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTN], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::LBF]);
+        tetcells_list[voxel_id * 6 + 3] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::RBN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::RBF]);
+        tetcells_list[voxel_id * 6 + 4] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LBF], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::RBF]);
+        tetcells_list[voxel_id * 6 + 5] = vec4i(cube_indices[Cube::VertexLocationId::RTN], cube_indices[Cube::VertexLocationId::LTF], cube_indices[Cube::VertexLocationId::RTF], cube_indices[Cube::VertexLocationId::RBF]);
+
+        voxel_id ++;
+      }
+    }
+
+    //remove slivers or tetrahedral elements with volume less than a threshold
+    static const real_t kMinVolumeThreshold = (real_t)0.0001;
+    size_t i = 0;
+    while(i < tetcells_list.size()) {
+      vec4i vertex_ids = tetcells_list[i];
+      Tetrahedra::VertexArray4 tet_vertex_array4;
+      tet_vertex_array4.col(0) = vertex_list[vertex_ids.coeff(0)];
+      tet_vertex_array4.col(1) = vertex_list[vertex_ids.coeff(1)];
+      tet_vertex_array4.col(2) = vertex_list[vertex_ids.coeff(2)];
+      tet_vertex_array4.col(3) = vertex_list[vertex_ids.coeff(3)];
+
+      Tetrahedra t(tet_vertex_array4);
+      if(t.volume() < kMinVolumeThreshold) {
+        tetcells_list.erase(tetcells_list.begin() + i);
+      } else {
+        i++;
+      }
+    }
+
+    return inout_mesh.readFromList(vertex_list, tetcells_list);
   }
 
 }

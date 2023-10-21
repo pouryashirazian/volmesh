@@ -20,6 +20,7 @@ add_library(${LIB_NAME}
             src/volmesh/cube.cpp
             src/volmesh/halfedge.cpp
             src/volmesh/index.cpp
+            src/volmesh/mathutils.cpp
             src/volmesh/sampletetmeshes.cpp
             #  src/volmesh/stlserializer.cpp
             src/volmesh/tetmesh.cpp
