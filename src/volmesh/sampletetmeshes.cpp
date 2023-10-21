@@ -132,41 +132,42 @@ namespace volmesh {
     vertex_list.reserve((vertical_slices + 1 ) * horizontal_slices * 2);
 
     //compute vertices on the outer surface of the shell
-    const size_t outershell_start_vertex_id = vertex_list.size();
     for(int v=0; v < vertical_slices + 1; v++) {
-      const real_t phi = volmesh::DegToRad(v * inv_vslices * 180.0);
+      const real_t phi = volmesh::DegToRad(static_cast<real_t>(v) * inv_vslices * (real_t)180.0);
 
       for(int h=0; h < horizontal_slices; h++) {
-        const real_t omega = volmesh::DegToRad(h * inv_hslices * 360.0);
+        const real_t omega = volmesh::DegToRad(static_cast<real_t>(h) * inv_hslices * (real_t)360.0);
 
         //compute vertex compenents
-        vec3 v(radius * sin(phi) * sin(omega),
-               radius * sin(phi) * cos(omega),
-               radius * cos(phi));
+        vec3 vertex(radius * sin(phi) * sin(omega),
+                    radius * sin(phi) * cos(omega),
+                    radius * cos(phi));
 
-        vertex_list.push_back(v);
+        vertex_list.push_back(vertex);
       }
     }
+
+    const size_t outershell_start_vertex_id = vertex_list.size();
 
     //compute vertices on the inner surface of the shell
     const real_t inner_radius = radius - shell_tickness;
     for(int v=0; v < vertical_slices + 1; v++) {
-      const real_t phi = volmesh::DegToRad(v * inv_vslices * 180.0);
+      const real_t phi = volmesh::DegToRad(static_cast<real_t>(v) * inv_vslices * (real_t)180.0);
 
       for(int h=0; h < horizontal_slices; h++) {
-        const real_t omega = volmesh::DegToRad(h * inv_hslices * 360.0);
+        const real_t omega = volmesh::DegToRad(static_cast<real_t>(h) * inv_hslices * (real_t)360.0);
 
         //compute vertex compenents
-        vec3 v(inner_radius * sin(phi) * sin(omega),
-               inner_radius * sin(phi) * cos(omega),
-               inner_radius * cos(phi));
+        vec3 vertex(inner_radius * sin(phi) * sin(omega),
+                    inner_radius * sin(phi) * cos(omega),
+                    inner_radius * cos(phi));
 
-        vertex_list.push_back(v);
+        vertex_list.push_back(vertex);
       }
     }
 
     std::vector<vec4i> tetcells_list;
-    tetcells_list.reserve(vertical_slices * horizontal_slices * 6);
+    tetcells_list.resize(vertical_slices * horizontal_slices * 6);
 
     int voxel_id = 0;
 
