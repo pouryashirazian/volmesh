@@ -1,7 +1,7 @@
 #pragma once
 
 #include "volmesh/volmesh.h"
-#include "volmesh/cube.h"
+#include "volmesh/voxel.h"
 
 namespace volmesh {
 
@@ -20,19 +20,19 @@ namespace volmesh {
   public:
     TetMesh();
     explicit TetMesh(const std::vector<vec3>& in_vertices,
-                     const std::vector<vec4i>& in_cells);
+                     const std::vector<vec4i>& in_tetra_cells_by_vertex_ids);
     virtual ~TetMesh();
 
-    CellIndex insertTetrahedra(const vec4i& in_tetrahedra_cell);
+    CellIndex insertTetrahedra(const vec4i& in_tetra_vertex_ids);
 
-    bool insertCube(const std::array<int, Cube::kNumVerticesPerCell>& in_cube_cell,
-                    std::array<CellIndex, Cube::kNumFittingTetrahedra>& out_tet_cell_indices);
+    bool insertVoxel(const std::array<int, Voxel::kNumVerticesPerCell>& in_voxel_vertex_ids,
+                     std::array<CellIndex, Voxel::kNumFittingTetrahedra>& out_tetra_cell_ids);
 
     bool readFromList(const std::vector<vec3>& in_vertices,
-                      const std::vector<vec4i>& in_cells);
+                      const std::vector<vec4i>& in_tetra_cells_by_vertex_ids);
 
     bool writeToList(std::vector<vec3>& out_vertices,
-                     std::vector<vec4i>& out_cells) const;
+                     std::vector<vec4i>& out_tetra_cells_by_vertex_ids) const;
 
 
   };

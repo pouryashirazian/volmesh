@@ -17,14 +17,14 @@ set(LIB_NAME "volmesh")
 
 add_library(${LIB_NAME}
             STATIC
-            src/volmesh/cube.cpp
             src/volmesh/halfedge.cpp
             src/volmesh/index.cpp
             src/volmesh/mathutils.cpp
             src/volmesh/sampletetmeshes.cpp
             #  src/volmesh/stlserializer.cpp
             src/volmesh/tetmesh.cpp
-            src/volmesh/tetrahedra.cpp)
+            src/volmesh/tetrahedra.cpp
+            src/volmesh/voxel.cpp)
 
 target_include_directories(${LIB_NAME} PRIVATE
                            ${CMAKE_SOURCE_DIR}/include)

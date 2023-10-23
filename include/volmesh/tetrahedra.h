@@ -12,14 +12,14 @@ namespace volmesh {
     static const int kNumFaces = 4;
     static const int kNumEdges = 6;
 
-    typedef Eigen::Matrix<real_t, 3, kNumVerticesPerCell> VertexArray4;
+    typedef Eigen::Matrix<real_t, 3, kNumVerticesPerCell> TetraVertexArray;
 
     Tetrahedra();
     Tetrahedra(const Tetrahedra& rhs);
-    explicit Tetrahedra(const VertexArray4& vertices);
+    explicit Tetrahedra(const TetraVertexArray& vertices);
     ~Tetrahedra();
 
-    const VertexArray4& vertices() const;
+    const TetraVertexArray& vertices() const;
 
     vec3 vertex(const int vertex_id) const;
 
@@ -49,7 +49,7 @@ namespace volmesh {
     static vec2i edgeVertexIdsLut(const int edge_id);
 
   private:
-    VertexArray4 vertices_;
+    TetraVertexArray vertices_;
   };
 
 }

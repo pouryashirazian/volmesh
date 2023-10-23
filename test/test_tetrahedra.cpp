@@ -6,8 +6,8 @@ using namespace volmesh;
 
 static const real_t kEpsilon = 1e-5;
 
-static const Tetrahedra::VertexArray4 kTetVertices = [] {
-    Tetrahedra::VertexArray4 tmp;
+static const Tetrahedra::TetraVertexArray kTetVertices = [] {
+    Tetrahedra::TetraVertexArray tmp;
     //init format:
     //X: v0.x, v1.x, v2.x, v3.x
     //Y: v0.y, v1.y, v2.y, v3.y

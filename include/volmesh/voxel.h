@@ -6,14 +6,14 @@
 
 namespace volmesh {
 
-  class Cube {
+  class Voxel {
   public:
     static const int kNumVerticesPerCell = 8;
     static const int kNumFaces = 6;
     static const int kNumEdges = 12;
     static const int kNumFittingTetrahedra = 6;
 
-    typedef Eigen::Matrix<real_t, 3, kNumVerticesPerCell> VertexArray8;
+    typedef Eigen::Matrix<real_t, 3, kNumVerticesPerCell> VoxelVertexArray;
 
     //Vertex location Id
     enum VertexLocationId : int {
@@ -23,12 +23,12 @@ namespace volmesh {
       RTN = 6, RTF = 7
     };
 
-    Cube();
-    Cube(const Cube& rhs);
-    explicit Cube(const VertexArray8& vertices);
-    ~Cube();
+    Voxel();
+    Voxel(const Voxel& rhs);
+    explicit Voxel(const VoxelVertexArray& vertices);
+    ~Voxel();
 
-    const VertexArray8& vertices() const;
+    const VoxelVertexArray& vertices() const;
 
     vec3 vertex(const int vertex_id) const;
 
@@ -39,7 +39,7 @@ namespace volmesh {
     real_t volume() const;
 
   private:
-    VertexArray8 vertices_;
+    VoxelVertexArray vertices_;
   };
 
 }

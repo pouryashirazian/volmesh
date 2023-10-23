@@ -17,7 +17,7 @@ Tetrahedra::Tetrahedra(const Tetrahedra& rhs): vertices_(rhs.vertices_) {
 
 }
 
-Tetrahedra::Tetrahedra(const Tetrahedra::VertexArray4& vertices): vertices_(vertices) {
+Tetrahedra::Tetrahedra(const Tetrahedra::TetraVertexArray& vertices): vertices_(vertices) {
 
 }
 
@@ -25,7 +25,7 @@ Tetrahedra::~Tetrahedra() {
 
 }
 
-const Tetrahedra::VertexArray4& Tetrahedra::vertices() const {
+const Tetrahedra::TetraVertexArray& Tetrahedra::vertices() const {
   return vertices_;
 }
 
