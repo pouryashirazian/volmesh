@@ -21,7 +21,6 @@ TetMesh::~TetMesh() {
 }
 
 CellIndex TetMesh::insertTetrahedra(const vec4i& in_tetra_vertex_ids) {
-  CellIndex cell_index = CellIndex::create(kSentinelIndex);
   const int count_vertices = static_cast<int>(countVertices());
   for(int i=0; i < 4; i++) {
     const int vertex_id = in_tetra_vertex_ids.coeff(i);
@@ -67,8 +66,7 @@ CellIndex TetMesh::insertTetrahedra(const vec4i& in_tetra_vertex_ids) {
   HalfFaceIndex hf3 = HalfFaceIndex::create(face_keys[3]);
   TetMesh::Layout::CellType::HalfFaceIndexArray hface_array({hf0, hf1, hf2, hf3});
   TetMesh::Layout::CellType cell(hface_array);
-  cell_index = insertCellIfNotExists(cell);
-  return cell_index;
+  return insertCellIfNotExists(cell);
 }
 
 bool TetMesh::insertVoxel(const std::array<int, Voxel::kNumVerticesPerCell>& in_voxel_vertex_ids,

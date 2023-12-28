@@ -10,7 +10,7 @@ namespace volmesh {
     BaseIndex(): index_(kSentinelIndex) {}
   public:
     explicit BaseIndex(const uint32_t index): index_(index) {}
-    explicit BaseIndex(const BaseIndex& rhs);
+    BaseIndex(const BaseIndex& rhs);
 
     bool valid() const;
     uint32_t get() const;
@@ -28,25 +28,25 @@ namespace volmesh {
   };
 
   class VertexIndex : public BaseIndex {
-    VertexIndex(const uint32_t index):BaseIndex(index) {}
+    explicit VertexIndex(const uint32_t index):BaseIndex(index) {}
   public:
     static VertexIndex create(const uint32_t index);
   };
 
   class HalfEdgeIndex : public BaseIndex {
-    HalfEdgeIndex(const uint32_t index):BaseIndex(index) {}
+    explicit HalfEdgeIndex(const uint32_t index):BaseIndex(index) {}
   public:
     static HalfEdgeIndex create(const uint32_t index);
   };
 
   class HalfFaceIndex : public BaseIndex {
-    HalfFaceIndex(const uint32_t index):BaseIndex(index) {}
+    explicit HalfFaceIndex(const uint32_t index):BaseIndex(index) {}
   public:
     static HalfFaceIndex create(const uint32_t index);
   };
 
   class CellIndex : public BaseIndex {
-    CellIndex(const uint32_t index):BaseIndex(index) {}
+    explicit CellIndex(const uint32_t index):BaseIndex(index) {}
   public:
     static CellIndex create(const uint32_t index);
   };

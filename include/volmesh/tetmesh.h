@@ -33,8 +33,6 @@ namespace volmesh {
 
     bool writeToList(std::vector<vec3>& out_vertices,
                      std::vector<vec4i>& out_tetra_cells_by_vertex_ids) const;
-
-
   };
 
 }
