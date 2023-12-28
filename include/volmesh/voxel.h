@@ -3,6 +3,7 @@
 #include "volmesh/basetypes.h"
 
 #include <array>
+#include <stdint.h>
 
 namespace volmesh {
 
@@ -23,6 +24,12 @@ namespace volmesh {
       RTN = 6, RTF = 7
     };
 
+    enum VoxelAxis : int {
+      X = 0,
+      Y = 1,
+      Z = 2,
+    };
+
     Voxel();
     Voxel(const Voxel& rhs);
     explicit Voxel(const VoxelVertexArray& vertices);
@@ -32,11 +39,16 @@ namespace volmesh {
 
     vec3 vertex(const int vertex_id) const;
 
+    real_t axisLength(const VoxelAxis axis) const;
+
     real_t surfaceArea() const;
 
     vec3 centroid() const;
 
     real_t volume() const;
+
+    static Voxel CreateVoxel(const vec3& center,
+                             const vec3& axis_lengths);
 
   private:
     VoxelVertexArray vertices_;
