@@ -16,11 +16,11 @@ get_current_dir() {
 
 get_current_dir
 
-# source $DIR/scripts/utils.sh
+source $DIR/scripts/utils.sh
 
-# git clone https://github.com/Microsoft/vcpkg.git
+git clone https://github.com/Microsoft/vcpkg.git
 
-# ./vcpkg/bootstrap-vcpkg.sh
+./vcpkg/bootstrap-vcpkg.sh
 
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=${DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Debug
 
