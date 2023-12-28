@@ -27,9 +27,6 @@ jobs:
         build_type: [Release]
         c_compiler: [gcc, clang, cl]
         include:
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
@@ -37,6 +34,9 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
         exclude:
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
           - os: windows-latest
             c_compiler: gcc
           - os: windows-latest
@@ -59,9 +59,9 @@ jobs:
       # ws=`echo ${{ github.workspace }} | sed -r 's~/~//~g'`
       shell: bash
       run: |
-        echo ${{ matrix.os }}
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
+        echo "current path = ${PWD}"
+        cd ${{ github.workspace }} && git clone https://github.com/Microsoft/vcpkg.git
+        ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.sh
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -71,7 +71,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
         -S ${{ github.workspace }}
 
     - name: Build
