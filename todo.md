@@ -1,7 +1,7 @@
 # last updated on 12/27/2023
 [] - Add the converter app that transforms a surface mesh to SDF and extracts a volume mesh from the SDF
 
-[] - tetmesh writeToList
+[x] - tetmesh writeToList
 
 [] - tetmesh add all samples as unit-tests
 
