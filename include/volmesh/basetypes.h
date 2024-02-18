@@ -2,6 +2,8 @@
 
 #include <Eigen/Dense>
 
+#define VOLMESH_USE_FLT64
+
 namespace volmesh {
 
   #ifdef VOLMESH_USE_FLT64

@@ -18,6 +18,8 @@ namespace volmesh {
 
     bool equals(const HalfEdge& rhs) const;
 
+    HalfEdge sortedVertexIds() const;
+
     const HalfEdge& operator=(const HalfEdge& rhs);
 
   private:

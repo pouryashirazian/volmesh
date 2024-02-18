@@ -2,6 +2,7 @@
 #include "volmesh/tetrahedra.h"
 
 #include <iostream>
+#include <fstream>
 
 using namespace volmesh;
 
@@ -126,27 +127,154 @@ bool TetMesh::writeToList(std::vector<vec3>& out_vertices,
   }
 
   out_tet_cells_by_vertex_ids.resize(cells_count);
+
   for(uint32_t i=0; i < cells_count; ++i) {
     TetMesh::CellType curr_cell = cell(CellIndex::create(i));
 
-    //face0 of our tet cell references edges {0, 2, 4}
+    //face0 of each tet cell references half-edges {0, 2, 4} which correspond to edges {0, 1, 2}
     //edge 0 -> vertex {1, 2}
+    //edge 1 -> vertex {2, 3}
     //edge 2 -> vertex {3, 1}
+
+    //face2 of each tet cell references half-edges {9, 10, 5} which correspond to edges {4, 5, 2}
     //edge 4 -> vertex {0, 3}
+    //edge 5 -> vertex {0, 1}
+    //edge 2 -> vertex {3, 1}
 
     //each tet cell has 4 half-faces
     TetMesh::HalfFaceType face0 = halfFace(curr_cell.halfFaceIndex(0));
 
     //each half-face has 3 half-edges
-    volmesh::HalfEdge tet_edge0 = halfEdge(face0.halfEdgeIndex(0));
-    volmesh::HalfEdge tet_edge2 = halfEdge(face0.halfEdgeIndex(1));
-    volmesh::HalfEdge tet_edge4 = halfEdge(face0.halfEdgeIndex(2));
+    volmesh::HalfEdge face0_hedge0 = halfEdge(face0.halfEdgeIndex(0)).sortedVertexIds();
+    volmesh::HalfEdge face0_hedge2 = halfEdge(face0.halfEdgeIndex(1)).sortedVertexIds();
 
-    out_tet_cells_by_vertex_ids[i] = vec4i(tet_edge4.start(),
-                                           tet_edge0.start(),
-                                           tet_edge0.end(),
-                                           tet_edge2.start());
+    TetMesh::HalfFaceType face2 = halfFace(curr_cell.halfFaceIndex(2));
+    volmesh::HalfEdge face2_hedge0 = halfEdge(face2.halfEdgeIndex(0)).sortedVertexIds();
+
+    out_tet_cells_by_vertex_ids[i] = vec4i(face2_hedge0.start(),
+                                           face0_hedge0.start(),
+                                           face0_hedge0.end(),
+                                           face0_hedge2.end());
   }
 
+  return true;
+}
+
+template <typename T>
+void SwapEndianness(T& var) {
+  char* varArray = reinterpret_cast<char*>(&var);
+  for(long i = 0; i < static_cast<long>(sizeof(var)/2); i++) {
+    std::swap(varArray[sizeof(var) - 1 - i], varArray[i]);
+  }
+}
+
+bool TetMesh::exportToVTK(const std::string& filepath, const bool is_binary) {
+  //export to list of vertices and elements
+  std::vector<vec3> vertices;
+  std::vector<vec4i> cells;
+  bool result = writeToList(vertices, cells);
+  if(result == false) {
+    std::cerr << "Failed to export to list of vertices and tetrahedral cells" << std::endl;
+    return false;
+  }
+
+  std::ofstream file;
+  if(is_binary) {
+    file.open(filepath.c_str(), std::ios::out | std::ios::binary);
+  } else {
+    file.open(filepath.c_str());
+  }
+
+  file << "# vtk DataFile Version 3.0" << std::endl;
+  file << "volmesh exported Tetrahedral Mesh" << std::endl;
+
+  if(is_binary)
+    file << "BINARY"<< std::endl;
+  else
+    file << "ASCII"<< std::endl;
+
+  file << "DATASET UNSTRUCTURED_GRID" << std::endl;
+
+  //write the points
+  std::string datatype_str = "float";
+  if(typeid(real_t) == typeid(double))
+    datatype_str = "double";
+  else
+    datatype_str = "float";
+
+  file << "POINTS " << vertices.size() << " " << datatype_str << std::endl;
+  for (size_t i = 0; i < vertices.size(); i++) {
+    vec3 p = vertices[i];
+
+    if(is_binary) {
+      real_t x = p.x();
+      real_t y = p.y();
+      real_t z = p.z();
+
+      SwapEndianness(x);
+      SwapEndianness(y);
+      SwapEndianness(z);
+
+      file.write(reinterpret_cast<char*>(&x), sizeof(real_t));
+      file.write(reinterpret_cast<char*>(&y), sizeof(real_t));
+      file.write(reinterpret_cast<char*>(&z), sizeof(real_t));
+    } else {
+      file << p.x() << " " << p.y() << " " << p.z() << std::endl;
+    }
+  }
+
+  if(is_binary) {
+    file << std::endl;
+  }
+
+  //write the cells
+  const int total_cells_count = static_cast<int>(cells.size());
+
+  //4 vertices per cell and 1 for the number of vertices in each cell
+  int total_indices_count = total_cells_count * 5;
+
+  file << "CELLS " << total_cells_count << " " << total_indices_count << std::endl;
+
+  for (size_t i = 0; i < cells.size(); i++) {
+    vec4i cell = cells[i];
+
+    if(is_binary) {
+      int nodes_per_cell = 4;
+      int x = cell.x();
+      int y = cell.y();
+      int z = cell.z();
+      int w = cell.w();
+
+      SwapEndianness(nodes_per_cell);
+      SwapEndianness(x);
+      SwapEndianness(y);
+      SwapEndianness(z);
+      SwapEndianness(w);
+
+      file.write(reinterpret_cast<char*>(&nodes_per_cell), sizeof(int));
+      file.write(reinterpret_cast<char*>(&x), sizeof(int));
+      file.write(reinterpret_cast<char*>(&y), sizeof(int));
+      file.write(reinterpret_cast<char*>(&z), sizeof(int));
+      file.write(reinterpret_cast<char*>(&w), sizeof(int));
+    } else {
+      file << "4 " << cell.x() << " " << cell.y() << " " << cell.z() << " " << cell.w() << std::endl;
+    }
+  }
+
+  //Write the cell types
+  file << "CELL_TYPES " << total_cells_count << std::endl;
+
+  // VTK_TETRA
+  int vtk_tetrahedra_celltype = 10;
+  SwapEndianness(vtk_tetrahedra_celltype);
+  for (size_t i = 0; i < total_cells_count; i++) {
+    if(is_binary) {
+      file.write(reinterpret_cast<const char*>(&vtk_tetrahedra_celltype), sizeof(int));
+    } else {
+      file << "10" << std::endl;
+    }
+  }
+
+  file.close();
   return true;
 }

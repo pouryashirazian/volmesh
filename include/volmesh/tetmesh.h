@@ -33,6 +33,8 @@ namespace volmesh {
 
     bool writeToList(std::vector<vec3>& out_vertices,
                      std::vector<vec4i>& out_tet_cells_by_vertex_ids) const;
+
+    bool exportToVTK(const std::string& filepath, const bool is_binary);
   };
 
 }

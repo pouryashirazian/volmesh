@@ -22,12 +22,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: set env variables
+    - name: Set env variables
       run: echo "VCPKG_FORCE_SYSTEM_BINARIES=1" >> $GITHUB_ENV
     - name: test env variables
       run: echo "VCPKG_FORCE_SYSTEM_BINARIES=${VCPKG_FORCE_SYSTEM_BINARIES}"
 
-    - name: run vcpkg
+    - name: Run vcpkg
       # Downloads all required software dependencies using vcpkg
       # ws=`echo ${{ github.workspace }} | sed -r 's~/~//~g'`
       shell: bash
