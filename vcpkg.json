@@ -5,6 +5,7 @@
   "dependencies": [
     "eigen3",
     "fmt",
+    "cxxopts",
     "gtest"
   ]
 }

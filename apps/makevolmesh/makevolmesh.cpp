@@ -4,27 +4,29 @@
 #include <iostream>
 #include <filesystem>
 #include <fmt/core.h>
+#include <cxxopts.hpp>
 
 using namespace volmesh;
 
 namespace fs = std::filesystem;
 
 int main(int argc, const char* argv[]) {
-  TetMesh mesh;
-  createOneTetrahedra(mesh);
+  cxxopts::Options options("makevolmesh", "Generate volumetric meshes from 3D surface meshes.");
 
-  fs::path ascii_filepath = fs::temp_directory_path() / "onetet_ascii.vtk";
-  fs::path binary_filepath = fs::temp_directory_path() / "onetet_binary.vtk";
+  options.add_options()
+    ("i,input", "Input surface mesh", cxxopts::value<std::string>())
+    ("o,output", "Output volumetric mesh", cxxopts::value<std::string>())
+    ("s,sdf", "Save intermediate SDF", cxxopts::value<bool>()->default_value("false"))
+    ("h,help", "Print usage")
+  ;
 
-  bool result = mesh.exportToVTK(ascii_filepath.string(), false);
-  if(result) {
-    std::cout << fmt::format("Wrote [{}]", ascii_filepath.c_str()) << std::endl;
+  auto result = options.parse(argc, argv);
+
+  if (result.count("help")) {
+    std::cout << options.help() << std::endl;
+    exit(0);
   }
 
-  result = mesh.exportToVTK(binary_filepath, true);
-  if(result) {
-    std::cout << fmt::format("Wrote [{}]", binary_filepath.c_str()) << std::endl;
-  }
+  std::string surface_mesh = result["input"].as<std::string>();
 
-  return 0;
 }

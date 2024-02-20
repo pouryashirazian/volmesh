@@ -1,24 +1,21 @@
 #pragma once
 
+#include "volmesh/basetypes.h"
+
 #include <string>
 
 namespace volmesh {
 
-    bool ReadSTL(const std::string& input_stl_filepath, UmfTriangleMeshModelGroup& output_triangle_modelgroup);
-    bool ReadAsciiSTL(const std::string& input_stl_filepath, UmfTriangleMeshModelGroup& output_triangle_modelgroup);
-    bool ReadBinarySTL(const std::string& input_stl_filepath, UmfTriangleMeshModelGroup& output_triangle_modelgroup);
+    bool ReadSTL(const std::string& in_mesh_filepath,
+                 std::vector<vec3>& out_vertices,
+                 std::vector<vec3>& out_per_face_normals);
 
-    bool WriteSTL(const std::string& input_stl_dirpath,
-                  const UmfTriangleMeshModelGroup& input_triangle_modelgroup,
-                  const ExportFileNamingPolicy& input_naming_policy = kExportFileNameIsModelName,
-                  bool use_stl_binary = true);
+    bool ReadAsciiSTL(const std::string& in_mesh_filepath,
+                      std::vector<vec3>& out_vertices,
+                      std::vector<vec3>& out_per_face_normals);
 
-    bool WriteAsciiSTL(const std::string& input_stl_dirpath,
-                       const UmfTriangleMeshModelGroup& input_triangle_modelgroup,
-                       const ExportFileNamingPolicy& input_naming_policy = kExportFileNameIsModelName);
-
-    bool WriteBinarySTL(const std::string& input_stl_dirpath,
-                        const UmfTriangleMeshModelGroup& input_triangle_modelgroup,
-                        const ExportFileNamingPolicy& input_naming_policy = kExportFileNameIsModelName);
+    bool ReadBinarySTL(const std::string& in_mesh_filepath,
+                       std::vector<vec3>& out_vertices,
+                       std::vector<vec3>& out_per_face_normals);
 
 }
