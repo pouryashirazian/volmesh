@@ -19,12 +19,13 @@ add_library(${VOLMESH_LIB_NAME}
             src/volmesh/halfedge.cpp
             src/volmesh/index.cpp
             src/volmesh/mathutils.cpp
-            src/volmesh/mergevertexlist.cpp
+            src/volmesh/mergelist.cpp
             src/volmesh/sampletetmeshes.cpp
             src/volmesh/signeddistancefield.cpp
             src/volmesh/stlserializer.cpp
             src/volmesh/tetmesh.cpp
             src/volmesh/tetrahedra.cpp
+            src/volmesh/trianglemesh.cpp
             src/volmesh/voxel.cpp)
 
 target_include_directories(${VOLMESH_LIB_NAME} PRIVATE

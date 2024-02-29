@@ -1,21 +1,17 @@
 #pragma once
 
-#include "volmesh/basetypes.h"
-
 #include <string>
-
 namespace volmesh {
 
+    class TriangleMesh;
+
     bool ReadSTL(const std::string& in_mesh_filepath,
-                 std::vector<vec3>& out_vertices,
-                 std::vector<vec3>& out_per_face_normals);
+                 TriangleMesh& out_triangle_mesh);
 
     bool ReadAsciiSTL(const std::string& in_mesh_filepath,
-                      std::vector<vec3>& out_vertices,
-                      std::vector<vec3>& out_per_face_normals);
+                      TriangleMesh& out_triangle_mesh);
 
     bool ReadBinarySTL(const std::string& in_mesh_filepath,
-                       std::vector<vec3>& out_vertices,
-                       std::vector<vec3>& out_per_face_normals);
+                       TriangleMesh& out_triangle_mesh);
 
 }

@@ -34,10 +34,4 @@ namespace volmesh {
     std::vector<uint32_t> masks_prefix_sum_;
   };
 
-  bool MergeVertexList(const std::vector<vec3>& in_vertices,
-                       const std::vector<vec3>& in_per_face_normals,
-                       std::vector<vec3>& out_vertices,
-                       std::vector<vec3>& out_per_vertex_normals,
-                       std::vector<vec3i>& out_triangles);
-
 }

@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fmt/core.h>
 #include <cxxopts.hpp>
+#include <spdlog/spdlog.h>
 
 using namespace volmesh;
 
@@ -27,6 +28,6 @@ int main(int argc, const char* argv[]) {
     exit(0);
   }
 
-  std::string surface_mesh = result["input"].as<std::string>();
-
+  std::string surface_mesh_filepath = result["input"].as<std::string>();
+  spdlog::info("input surface mesh at [{}]", surface_mesh_filepath.c_str());
 }

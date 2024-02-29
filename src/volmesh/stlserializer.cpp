@@ -1,4 +1,6 @@
 #include "volmesh/stlserializer.h"
+#include "volmesh/trianglemesh.h"
+#include "volmesh/basetypes.h"
 
 #include <iostream>
 #include <fstream>
@@ -23,8 +25,7 @@ namespace volmesh {
   }
 
   bool ReadSTL(const std::string& in_mesh_filepath,
-               std::vector<vec3>& out_vertices,
-               std::vector<vec3>& out_per_face_normals)
+               TriangleMesh& out_triangle_mesh)
   {
     if(IsValidSTLFile(in_mesh_filepath) == false) {
       std::cerr << "The supplied mesh file [" << in_mesh_filepath << "] is invalid." << std::endl;
@@ -45,19 +46,18 @@ namespace volmesh {
     {
       // ASCII file
       stlfile.close();
-      return ReadAsciiSTL(in_mesh_filepath, out_vertices, out_per_face_normals);
+      return ReadAsciiSTL(in_mesh_filepath, out_triangle_mesh);
     }
     else
     {
       // Binary file
       stlfile.close();
-      return ReadBinarySTL(in_mesh_filepath, out_vertices, out_per_face_normals);
+      return ReadBinarySTL(in_mesh_filepath, out_triangle_mesh);
     }
   }
 
   bool ReadAsciiSTL(const std::string& in_mesh_filepath,
-                    std::vector<vec3>& out_vertices,
-                    std::vector<vec3>& out_per_face_normals)
+                    TriangleMesh& out_triangle_mesh)
   {
     if(IsValidSTLFile(in_mesh_filepath) == false) {
       std::cerr << "The supplied mesh file [" << in_mesh_filepath << "] is invalid." << std::endl;
@@ -98,8 +98,11 @@ namespace volmesh {
       }
     }
     stlfile.seekg(filePos);
-    out_vertices.reserve(triangles_count * 3);
-    out_per_face_normals.reserve(triangles_count);
+
+    std::vector<vec3> vertices;
+    std::vector<vec3> per_face_normals;
+    vertices.reserve(triangles_count * 3);
+    per_face_normals.reserve(triangles_count);
 
     // Read until reaching endsolid
     std::getline(stlfile, line); // skip the first line
@@ -124,10 +127,10 @@ namespace volmesh {
       std::getline(stlfile, line); // endloop
       std::getline(stlfile, line); // endfacet
 
-      out_vertices.push_back(pos[0]);
-      out_vertices.push_back(pos[1]);
-      out_vertices.push_back(pos[2]);
-      out_per_face_normals.push_back(norm);
+      vertices.push_back(pos[0]);
+      vertices.push_back(pos[1]);
+      vertices.push_back(pos[2]);
+      per_face_normals.push_back(norm);
 
       std::getline(stlfile, line); // facet normal n0 n1 n2
 
@@ -140,8 +143,7 @@ namespace volmesh {
   }
 
   bool ReadBinarySTL(const std::string& in_mesh_filepath,
-                     std::vector<vec3>& out_vertices,
-                     std::vector<vec3>& out_per_face_normals)
+                     TriangleMesh& out_triangle_mesh)
   {
     if(IsValidSTLFile(in_mesh_filepath) == false) {
       std::cerr << "The supplied mesh file [" << in_mesh_filepath << "] is invalid." << std::endl;
