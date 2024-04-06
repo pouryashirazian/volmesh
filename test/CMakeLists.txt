@@ -15,7 +15,7 @@ foreach (TEST ${TEST_SUITE})
   target_include_directories(${aTEST} PRIVATE
                              ${CMAKE_SOURCE_DIR}/include/)
 
-  target_link_libraries(${aTEST} PRIVATE GTest::gtest GTest::gtest_main volmesh)
+  target_link_libraries(${aTEST} PRIVATE GTest::gtest_main volmesh)
   add_test(${aTEST} ${aTEST})
 
 endforeach()

@@ -1,5 +1,7 @@
 #include "volmesh/halfedge.h"
 
+#include <functional>
+
 using namespace volmesh;
 
 HalfEdge::HalfEdge():start_(VertexIndex::create(kSentinelIndex)), end_(VertexIndex::create(kSentinelIndex)) {
@@ -28,6 +30,16 @@ const VertexIndex& HalfEdge::end() const {
 
 bool HalfEdge::equals(const HalfEdge& rhs) const {
   return (start_.get() == rhs.start_.get())&&(end_.get() == rhs.end_.get());
+}
+
+HalfEdge HalfEdge::sortedVertexIds() const {
+  uint32_t start_id = start_.get();
+  uint32_t end_id = end_.get();
+  if(start_id > end_id) {
+    std::swap(start_id, end_id);
+  }
+
+  return HalfEdge(VertexIndex::create(start_id), VertexIndex::create(end_id));
 }
 
 const HalfEdge& HalfEdge::operator=(const HalfEdge& rhs) {

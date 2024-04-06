@@ -1,8 +1,8 @@
 #pragma once
 
-#include "volmesh/cell.h"
 #include "volmesh/basetypes.h"
 #include "volmesh/index.h"
+#include "volmesh/halfface.h"
 
 #include <vector>
 #include <unordered_map>
@@ -10,40 +10,30 @@
 
 namespace volmesh {
 
-  template <int kNumFacesPerCell, int kNumEdgesPerFace> struct VolMeshLayout {
-    typedef Cell<kNumFacesPerCell> CellType;
+  template <int kNumEdgesPerFace> struct SurfaceMeshLayout {
     typedef HalfFace<kNumEdgesPerFace> HalfFaceType;
-    static const int kNumVerticesPerCell = (kNumFacesPerCell * kNumEdgesPerFace) / 3;
   };
 
-  template <int kNumFacesPerCell,
-            int kNumEdgesPerFace,
-            template <int NumFacesPerCell, int NumEdgesPerFace> class LayoutPolicy = VolMeshLayout>
-  class VolMesh {
+  template <int kNumEdgesPerFace,
+            template <int NumEdgesPerFace> class LayoutPolicy = SurfaceMeshLayout>
+  class SurfaceMesh {
   public:
-    using Layout = VolMeshLayout<kNumFacesPerCell, kNumEdgesPerFace>;
-    using CellType = typename Layout::CellType;
+    using Layout = SurfaceMeshLayout<kNumEdgesPerFace>;
     using HalfFaceType = typename Layout::HalfFaceType;
 
-    VolMesh();
-    explicit VolMesh(const VolMesh& rhs);
-    virtual ~VolMesh();
+    SurfaceMesh();
+    explicit SurfaceMesh(const SurfaceMesh& rhs);
+    virtual ~SurfaceMesh();
 
-    void copyFrom(const VolMesh& rhs);
+    void copyFrom(const SurfaceMesh& rhs);
     void clear();
 
-    uint32_t countCells() const;
     uint32_t countHalfFaces() const;
     uint32_t countEdges() const;
     uint32_t countHalfEdges() const;
     uint32_t countVertices() const;
 
-    const CellType& cell(const CellIndex& in_cell_id) const;
     const HalfFaceType& halfFace(const HalfFaceIndex& in_hface_id) const;
-    uint32_t countIncidentCellsPerHalfFace(const HalfFaceIndex& in_hface_id) const;
-    uint32_t getIncidentCellsPerHalfFace(const HalfFaceIndex& in_hface_id,
-                                         std::vector<CellIndex>& out_incident_cells) const;
-
     const HalfEdge& halfEdge(const HalfEdgeIndex& in_hedge_id) const;
     const vec3 vertex(const VertexIndex& in_vertex_id) const;
 
@@ -51,17 +41,11 @@ namespace volmesh {
 
     HalfEdgeIndex insertHalfEdgeIfNotExists(const HalfEdge& in_hedge);
     HalfFaceIndex insertHalfFaceIfNotExists(const HalfFaceType& in_hface);
-    CellIndex insertCellIfNotExists(const CellType& in_cell);
 
     bool findHalfEdge(const HalfEdge& in_hedge, HalfEdgeIndex& out_hedge_id) const;
     bool findHalfFace(const HalfFaceType& in_hface, HalfFaceIndex& out_hface_id) const;
-    bool findCell(const CellType& in_cell, CellIndex& out_cell_id) const;
 
   private:
-    mutable std::mutex cells_mutex_;
-    std::vector<CellType> cells_;
-    std::vector<std::vector<uint32_t> > incident_cells_per_hface_;
-
     mutable std::mutex hfaces_mutex_;
     std::vector<HalfFaceType> hfaces_;
     std::vector<std::vector<uint32_t> > incident_hfaces_per_hedge_;
@@ -74,6 +58,6 @@ namespace volmesh {
     std::vector<real_t> vertices_;
   };
 
-  #include "volmesh/volmesh.tpp"
+  #include "volmesh/surfacemesh.tpp"
 
 }

@@ -35,3 +35,12 @@ TEST(TetMesh, SphericalShell) {
   EXPECT_EQ(mesh.countHalfEdges(), mesh.countEdges() * 2);
   EXPECT_EQ(mesh.countVertices(), hs * (vs + 1) * 2);
 }
+
+TEST(TetMesh, ExtractTriangleMesh) {
+  TetMesh tet_mesh;
+  createOneTetrahedra(tet_mesh);
+
+  TriangleMesh tri_mesh;
+  EXPECT_TRUE(tet_mesh.extractBoundaryTriangleMesh(tri_mesh));
+  EXPECT_EQ(tri_mesh.countHalfFaces(), 4);
+}

@@ -5,6 +5,8 @@
   "dependencies": [
     "eigen3",
     "fmt",
+    "cxxopts",
+    "spdlog",
     "gtest"
   ]
 }
