@@ -40,6 +40,10 @@ namespace volmesh {
 
     const CellType& cell(const CellIndex& in_cell_id) const;
     const HalfFaceType& halfFace(const HalfFaceIndex& in_hface_id) const;
+    uint32_t countIncidentCellsPerHalfFace(const HalfFaceIndex& in_hface_id) const;
+    uint32_t getIncidentCellsPerHalfFace(const HalfFaceIndex& in_hface_id,
+                                         std::vector<CellIndex>& out_incident_cells) const;
+
     const HalfEdge& halfEdge(const HalfEdgeIndex& in_hedge_id) const;
     const vec3 vertex(const VertexIndex& in_vertex_id) const;
 

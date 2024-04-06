@@ -12,6 +12,8 @@ using namespace volmesh;
 namespace fs = std::filesystem;
 
 int main(int argc, const char* argv[]) {
+  spdlog::set_level(spdlog::level::debug);
+
   cxxopts::Options options("makevolmesh", "Generate volumetric meshes from 3D surface meshes.");
 
   options.add_options()
@@ -30,4 +32,10 @@ int main(int argc, const char* argv[]) {
 
   std::string surface_mesh_filepath = result["input"].as<std::string>();
   spdlog::info("input surface mesh at [{}]", surface_mesh_filepath.c_str());
+
+  std::unique_ptr<TetMesh> tet_mesh(new TetMesh());
+  createOneTetrahedra(*tet_mesh);
+
+  std::unique_ptr<TriangleMesh> tri_mesh(new TriangleMesh());
+  tet_mesh->extractBoundaryTriangleMesh(*tri_mesh);
 }

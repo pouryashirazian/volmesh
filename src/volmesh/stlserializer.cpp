@@ -173,8 +173,8 @@ namespace volmesh {
     uint32_t triangles_count = 0;
     stlfile.read((char *)&triangles_count, sizeof(triangles_count));
 
-    out_vertices.resize(triangles_count * 3);
-    out_per_face_normals.resize(triangles_count);
+    std::vector<vec3> vertices(triangles_count * 3);
+    std::vector<vec3> per_face_normals(triangles_count);
 
     //reading all triangles
     float pos[9];
@@ -187,15 +187,15 @@ namespace volmesh {
       stlfile.read((char *)pos, sizeof(float) * 9);
       stlfile.read((char *)&attr, sizeof(uint16_t));
 
-      out_vertices[i * 3] = vec3(pos[0], pos[1], pos[2]);
-      out_vertices[i * 3 + 1] = vec3(pos[3], pos[4], pos[5]);
-      out_vertices[i * 3 + 2] = vec3(pos[6], pos[7], pos[8]);
+      vertices[i * 3] = vec3(pos[0], pos[1], pos[2]);
+      vertices[i * 3 + 1] = vec3(pos[3], pos[4], pos[5]);
+      vertices[i * 3 + 2] = vec3(pos[6], pos[7], pos[8]);
 
-      out_per_face_normals[i] = vec3(norm[0], norm[1], norm[2]);
+      per_face_normals[i] = vec3(norm[0], norm[1], norm[2]);
     }
 
     stlfile.close();
 
-    return true;
+    return out_triangle_mesh.readFromList(vertices, per_face_normals);
   }
 }

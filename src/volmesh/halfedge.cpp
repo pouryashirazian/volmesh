@@ -1,6 +1,6 @@
 #include "volmesh/halfedge.h"
 
-#include <algorithm>
+#include <functional>
 
 using namespace volmesh;
 

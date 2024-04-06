@@ -76,6 +76,35 @@ VolMesh<kNumFacesPerCell, kNumEdgesPerFace, LayoutPolicy>::halfFace(const HalfFa
 }
 
 template <int kNumFacesPerCell, int kNumEdgesPerFace, template <int NumFacesPerCell, int NumEdgesPerFace> class LayoutPolicy>
+uint32_t VolMesh<kNumFacesPerCell, kNumEdgesPerFace, LayoutPolicy>::countIncidentCellsPerHalfFace(const HalfFaceIndex& in_hface_id) const {
+  const uint32_t hface_id = in_hface_id.get();
+  uint32_t count = 0;
+  if(hface_id >= 0 && hface_id < incident_cells_per_hface_.size()) {
+    std::lock_guard<std::mutex> lck(cells_mutex_);
+    count = static_cast<uint32_t>(incident_cells_per_hface_[hface_id].size());
+  }
+  return count;
+}
+
+template <int kNumFacesPerCell, int kNumEdgesPerFace, template <int NumFacesPerCell, int NumEdgesPerFace> class LayoutPolicy>
+uint32_t VolMesh<kNumFacesPerCell, kNumEdgesPerFace, LayoutPolicy>::getIncidentCellsPerHalfFace(const HalfFaceIndex& in_hface_id,
+                                                                                                std::vector<CellIndex>& out_incident_cells) const {
+  const uint32_t hface_id = in_hface_id.get();
+  uint32_t count = 0;
+  if(hface_id >= 0 && hface_id < incident_cells_per_hface_.size()) {
+    std::lock_guard<std::mutex> lck(cells_mutex_);
+    count = static_cast<uint32_t>(incident_cells_per_hface_[hface_id].size());
+    if(count > 0) {
+      out_incident_cells.resize(count);
+      for(uint32_t i=0; i < count; i++) {
+        out_incident_cells[i] = CellIndex::create(incident_cells_per_hface_[hface_id][i]);
+      }
+    }
+  }
+  return count;
+}
+
+template <int kNumFacesPerCell, int kNumEdgesPerFace, template <int NumFacesPerCell, int NumEdgesPerFace> class LayoutPolicy>
 const HalfEdge&
 VolMesh<kNumFacesPerCell, kNumEdgesPerFace, LayoutPolicy>::halfEdge(const HalfEdgeIndex& in_hedge_id) const {
   if(in_hedge_id.get() < countHalfEdges()) {
@@ -183,6 +212,10 @@ CellIndex VolMesh<kNumFacesPerCell, kNumEdgesPerFace, LayoutPolicy>::insertCellI
     std::lock_guard<std::mutex> lck(cells_mutex_);
     cells_.emplace_back(in_cell);
     cell_index = CellIndex::create(cells_.size() - 1);
+
+    for(int i=0; i < in_cell.numFaces(); i++) {
+      incident_cells_per_hface_[in_cell.halfFaceIndex(i)].push_back(cell_index);
+    }
   }
   return cell_index;
 }

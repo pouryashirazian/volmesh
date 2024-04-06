@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <spdlog/spdlog.h>
 
 using namespace volmesh;
 
@@ -91,6 +92,56 @@ bool TetMesh::insertVoxel(const std::array<int, Voxel::kNumVerticesPerCell>& in_
   }
 
   return result;
+}
+
+bool TetMesh::extractBoundaryTriangleMesh(volmesh::TriangleMesh& out_triangle_mesh) const {
+  if(countCells() == 0) {
+    return false;
+  }
+
+  //Loop over the list of half-faces and make a separate list of all half faces that are
+  //not references by any tetrahedra cells
+  std::vector<HalfFaceIndex> orphan_hfaces;
+  {
+    const uint32_t count_hfaces = countHalfFaces();
+    orphan_hfaces.reserve(count_hfaces / 2);
+    for(uint32_t i=0; i < count_hfaces; i++) {
+      const HalfFaceIndex hface_id = HalfFaceIndex::create(i);
+      if(countIncidentCellsPerHalfFace(hface_id) == 0) {
+        orphan_hfaces.push_back(hface_id);
+      }
+    }
+  }
+
+  spdlog::debug("Found [{}] orphaned half faces.", orphan_hfaces.size());
+
+  std::vector<vec3> triangle_vertices(orphan_hfaces.size() * 3);
+  std::vector<vec3> triangle_normals(orphan_hfaces.size());
+
+  for(size_t i=0; i < orphan_hfaces.size(); i++) {
+    const HalfFace hface = halfFace(orphan_hfaces[i]);
+    const HalfEdge hedge0 = halfEdge(hface.halfEdgeIndex(0));
+    const HalfEdge hedge1 = halfEdge(hface.halfEdgeIndex(1));
+    const HalfEdge hedge2 = halfEdge(hface.halfEdgeIndex(2));
+
+    const uint32_t ia = hedge0.start();
+    const uint32_t ib = hedge1.start();
+    const uint32_t ic = hedge2.start();
+
+    spdlog::info("Triangle {} of {} = [{}, {}, {}]", i + 1, orphan_hfaces.size(), ia, ib, ic);
+
+    const vec3 a = vertex(hedge0.start());
+    const vec3 b = vertex(hedge1.start());
+    const vec3 c = vertex(hedge2.start());
+
+    triangle_vertices[i * 3] = a;
+    triangle_vertices[i * 3 + 1] = b;
+    triangle_vertices[i * 3 + 2] = c;
+
+    triangle_normals[i] = (b - a).cross(c - a).normalized();
+  }
+
+  return out_triangle_mesh.readFromList(triangle_vertices, triangle_normals);
 }
 
 bool TetMesh::readFromList(const std::vector<vec3>& in_vertices,

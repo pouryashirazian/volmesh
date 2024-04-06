@@ -10,8 +10,8 @@ namespace volmesh {
     masks_.resize(capacity_);
     std::fill(masks_.begin(), masks_.end(), false);
 
-    masks_prefix_sum_.resize(capacity_);
-    std::fill(masks_prefix_sum_.begin(), masks_prefix_sum_.end(), 0);
+    indices_.resize(capacity_);
+    std::fill(indices_.begin(), indices_.end(), 0);
   }
 
   MergeList::~MergeList() {
@@ -23,13 +23,13 @@ namespace volmesh {
   }
 
   void MergeList::reset() {
-    next_id_ = 0;
+    next_unique_id_ = 0;
 
     masks_.resize(capacity_);
     std::fill(masks_.begin(), masks_.end(), false);
 
-    masks_prefix_sum_.resize(capacity_);
-    std::fill(masks_prefix_sum_.begin(), masks_prefix_sum_.end(), 0);
+    indices_.resize(capacity_);
+    std::fill(indices_.begin(), indices_.end(), 0);
 
     {
       std::lock_guard<std::mutex> lk(hash_id_map_mutex_);
@@ -37,28 +37,27 @@ namespace volmesh {
     }
   }
 
-  void MergeList::addHash(const std::size_t hash) {
-    if(next_id_ == capacity_) {
+  void MergeList::addHash(const std::size_t hash, const uint32_t element_id) {
+    if(next_unique_id_.load() == capacity_) {
       throw std::out_of_range(fmt::format("No space left in the merge list with capacity = [{}]", capacity_));
     }
 
-    const uint32_t id = next_id_.load();
-
-    if(exists(hash) == true) {
-      masks_[id] = false;
+    uint32_t resolved_id = 0;
+    if(exists(hash, &resolved_id) == true) {
+      //already exists therefore mask out current entry
+      masks_[element_id] = false;
+      indices_[element_id] = resolved_id;
     } else {
-      std::lock_guard<std::mutex> lk(hash_id_map_mutex_);
-      hash_id_map_.insert(std::make_pair(hash, id));
-      masks_[id] = true;
-    }
+      {
+        //entry does not exist. store it for future with a unique id.
+        std::lock_guard<std::mutex> lk(hash_id_map_mutex_);
+        hash_id_map_.insert(std::make_pair(hash, next_unique_id_.load()));
+      }
 
-    if(id > 0) {
-      masks_prefix_sum_[id] = masks_prefix_sum_[id - 1] + masks_[id - 1];
-    } else {
-      masks_prefix_sum_[id] = 0;
+      masks_[element_id] = true;
+      indices_[element_id] = next_unique_id_.load();
+      next_unique_id_ ++;
     }
-
-    next_id_ ++;
   }
 
   bool MergeList::exists(const std::size_t hash, uint32_t* out_index) const {
@@ -75,16 +74,15 @@ namespace volmesh {
   }
 
   std::size_t MergeList::uniqueElements() const {
-    const uint32_t last_id = next_id_.load() - 1;
-    return masks_prefix_sum_[last_id] + masks_[last_id];
+    return hash_id_map_.size();
   }
 
   std::vector<bool> MergeList::masks() const {
     return masks_;
   }
 
-  std::vector<uint32_t> MergeList::masksPrefixSum() const {
-    return masks_prefix_sum_;
+  std::vector<uint32_t> MergeList::indices() const {
+    return indices_;
   }
 
 }

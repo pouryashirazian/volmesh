@@ -2,6 +2,7 @@
 
 #include "volmesh/volmesh.h"
 #include "volmesh/voxel.h"
+#include "volmesh/trianglemesh.h"
 
 namespace volmesh {
 
@@ -27,6 +28,8 @@ namespace volmesh {
 
     bool insertVoxel(const std::array<int, Voxel::kNumVerticesPerCell>& in_voxel_vertex_ids,
                      std::array<CellIndex, Voxel::kNumFittingTetrahedra>& out_tet_cell_ids);
+
+    bool extractBoundaryTriangleMesh(volmesh::TriangleMesh& out_triangle_mesh) const;
 
     bool readFromList(const std::vector<vec3>& in_vertices,
                       const std::vector<vec4i>& in_tet_cells_by_vertex_ids);
