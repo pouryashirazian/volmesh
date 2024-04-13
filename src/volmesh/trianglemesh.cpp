@@ -24,7 +24,7 @@ HalfFaceIndex TriangleMesh::insertTriangle(const vec3i& in_face_vertex_ids) {
   if(validateFaceVertexIds(in_face_vertex_ids, count_vertices) == false) {
     const std::string error_message = fmt::format("Supplied face vertex ids is invalid [{}, {}, {}]",
                                                   in_face_vertex_ids[0], in_face_vertex_ids[1], in_face_vertex_ids[2]);
-    spdlog::error(error_message);
+    SPDLOG_ERROR(error_message);
     throw std::invalid_argument(error_message);
   }
 
@@ -42,9 +42,10 @@ HalfFaceIndex TriangleMesh::insertTriangle(const vec3i& in_face_vertex_ids) {
     half_edge_keys[i * 2 + 1] = insertHalfEdgeIfNotExists(backward_hedge);
   }
 
+  //gather forward half edges
   HalfEdgeIndex he0 = HalfEdgeIndex::create(half_edge_keys[0]);
-  HalfEdgeIndex he1 = HalfEdgeIndex::create(half_edge_keys[1]);
-  HalfEdgeIndex he2 = HalfEdgeIndex::create(half_edge_keys[2]);
+  HalfEdgeIndex he1 = HalfEdgeIndex::create(half_edge_keys[2]);
+  HalfEdgeIndex he2 = HalfEdgeIndex::create(half_edge_keys[4]);
 
   TriangleMesh::Layout::HalfFaceType forward_hface(TriangleMesh::Layout::HalfFaceType::HalfEdgeIndexArray({he0, he1, he2}));
   return insertHalfFaceIfNotExists(forward_hface);
@@ -53,7 +54,7 @@ HalfFaceIndex TriangleMesh::insertTriangle(const vec3i& in_face_vertex_ids) {
 bool TriangleMesh::readFromList(const std::vector<vec3>& in_triangle_vertices,
                                 const std::vector<vec3>& in_triangle_normals) {
   if(in_triangle_vertices.size() == 0) {
-    spdlog::error("Invalid input vertex list");
+    SPDLOG_ERROR("Invalid input vertex list");
     return false;
   }
 
@@ -64,7 +65,7 @@ bool TriangleMesh::readFromList(const std::vector<vec3>& in_triangle_vertices,
   }
 
   const auto masks = merge_list.masks();
-  spdlog::debug("Total unique elements in the vertex list [{} of {}]",
+  SPDLOG_DEBUG("Total unique elements in the vertex list [{} of {}]",
                 merge_list.uniqueElements(),
                 in_triangle_vertices.size());
 

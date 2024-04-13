@@ -1,8 +1,8 @@
 #include "volmesh/stlserializer.h"
 #include "volmesh/trianglemesh.h"
 #include "volmesh/basetypes.h"
+#include "volmesh/logger.h"
 
-#include <iostream>
 #include <fstream>
 #include <filesystem>
 
@@ -28,7 +28,7 @@ namespace volmesh {
                TriangleMesh& out_triangle_mesh)
   {
     if(IsValidSTLFile(in_mesh_filepath) == false) {
-      std::cerr << "The supplied mesh file [" << in_mesh_filepath << "] is invalid." << std::endl;
+      SPDLOG_ERROR("The supplied mesh file [{}] is invalid.", in_mesh_filepath.c_str());
       return false;
     }
 
@@ -60,7 +60,7 @@ namespace volmesh {
                     TriangleMesh& out_triangle_mesh)
   {
     if(IsValidSTLFile(in_mesh_filepath) == false) {
-      std::cerr << "The supplied mesh file [" << in_mesh_filepath << "] is invalid." << std::endl;
+      SPDLOG_ERROR("The supplied mesh file [{}] is invalid.", in_mesh_filepath.c_str());
       return false;
     }
 
@@ -76,7 +76,7 @@ namespace volmesh {
 
     if (strncmp(ascii_header, "solid", 5) != 0)
     {
-      std::cerr << "File [" << in_mesh_filepath << " it NOT an ASCII STL" << std::endl;
+      SPDLOG_ERROR("The supplied mesh file [{}] is not an ASCII STL.", in_mesh_filepath.c_str());
       stlfile.close();
       return false;
     }
@@ -146,7 +146,7 @@ namespace volmesh {
                      TriangleMesh& out_triangle_mesh)
   {
     if(IsValidSTLFile(in_mesh_filepath) == false) {
-      std::cerr << "The supplied mesh file [" << in_mesh_filepath << "] is invalid." << std::endl;
+      SPDLOG_ERROR("The supplied mesh file [{}] is invalid.", in_mesh_filepath.c_str());
       return false;
     }
 
@@ -161,7 +161,7 @@ namespace volmesh {
     stlfile.read(ascii_header, 5);
 
     if (strncmp(ascii_header, "solid", 5) == 0) {
-      std::cerr << "This is not a binary STL. Retry with the Ascii version of this function" << std::endl;
+      SPDLOG_ERROR("The supplied file [{}] is not a binary STL. Use ReadAsciiSTL instead.", in_mesh_filepath.c_str());
       stlfile.close();
       return false;
     }
@@ -198,4 +198,72 @@ namespace volmesh {
 
     return out_triangle_mesh.readFromList(vertices, per_face_normals);
   }
+
+  bool WriteBinarySTL(const std::string& in_mesh_filepath,
+                      const TriangleMesh& in_triangle_mesh) {
+    //open the file
+    std::ofstream stlfile(in_mesh_filepath, std::ios::binary);
+    if(stlfile.is_open() == false) {
+      return false;
+    }
+
+    //write header
+    char header[80];
+    static const std::string header_msg = "volmesh";
+    strncpy(header, header_msg.data(), header_msg.length());
+    stlfile.write(header, 80);
+
+    uint32_t triangles_count = in_triangle_mesh.countFaces();
+    stlfile.write((char *)&triangles_count, sizeof(triangles_count));
+
+    std::vector<vec3> vertices(triangles_count * 3);
+    std::vector<vec3> per_face_normals(triangles_count);
+
+    //reading all triangles
+    float postions_float32[9];
+    float normal_float32[3];
+    uint16_t attr = 0;
+
+    for(uint32_t i = 0; i < triangles_count; i++) {
+      TriangleMesh::HalfFaceType hface = in_triangle_mesh.halfFace(HalfFaceIndex::create(i));
+      HalfEdge hedge0 = in_triangle_mesh.halfEdge(hface.halfEdgeIndex(0));
+      HalfEdge hedge1 = in_triangle_mesh.halfEdge(hface.halfEdgeIndex(1));
+      HalfEdge hedge2 = in_triangle_mesh.halfEdge(hface.halfEdgeIndex(2));
+
+      SPDLOG_DEBUG("Fetching triangle vertices with ids [{}, {}, {}]",
+                   static_cast<uint32_t>(hedge0.start()),
+                   static_cast<uint32_t>(hedge1.start()),
+                   static_cast<uint32_t>(hedge2.start()));
+
+      const vec3 a = in_triangle_mesh.vertex(hedge0.start());
+      const vec3 b = in_triangle_mesh.vertex(hedge1.start());
+      const vec3 c = in_triangle_mesh.vertex(hedge2.start());
+      const vec3 normal = (b - a).cross(c - a).normalized();
+
+      postions_float32[0] = static_cast<float>(a[0]);
+      postions_float32[1] = static_cast<float>(a[1]);
+      postions_float32[2] = static_cast<float>(a[2]);
+      postions_float32[3] = static_cast<float>(b[0]);
+      postions_float32[4] = static_cast<float>(b[1]);
+      postions_float32[5] = static_cast<float>(b[2]);
+      postions_float32[6] = static_cast<float>(c[0]);
+      postions_float32[7] = static_cast<float>(c[1]);
+      postions_float32[8] = static_cast<float>(c[2]);
+
+      normal_float32[0] = static_cast<float>(normal[0]);
+      normal_float32[1] = static_cast<float>(normal[1]);
+      normal_float32[2] = static_cast<float>(normal[2]);
+
+      //write attributes
+      stlfile.write((char *)normal_float32, sizeof(float) * 3);
+      stlfile.write((char *)postions_float32, sizeof(float) * 9);
+      stlfile.write((char *)&attr, sizeof(uint16_t));
+    }
+
+    stlfile.close();
+
+    return true;
+  }
+
 }
+

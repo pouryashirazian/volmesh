@@ -28,6 +28,7 @@ namespace volmesh {
     void copyFrom(const SurfaceMesh& rhs);
     void clear();
 
+    uint32_t countFaces() const;
     uint32_t countHalfFaces() const;
     uint32_t countEdges() const;
     uint32_t countHalfEdges() const;

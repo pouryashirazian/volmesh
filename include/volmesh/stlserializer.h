@@ -14,4 +14,6 @@ namespace volmesh {
     bool ReadBinarySTL(const std::string& in_mesh_filepath,
                        TriangleMesh& out_triangle_mesh);
 
+    bool WriteBinarySTL(const std::string& in_mesh_filepath,
+                        const TriangleMesh& in_triangle_mesh);
 }

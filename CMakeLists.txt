@@ -18,6 +18,7 @@ add_library(${VOLMESH_LIB_NAME}
             STATIC
             src/volmesh/halfedge.cpp
             src/volmesh/index.cpp
+            src/volmesh/logger.cpp
             src/volmesh/mathutils.cpp
             src/volmesh/mergelist.cpp
             src/volmesh/sampletetmeshes.cpp
@@ -31,6 +32,7 @@ add_library(${VOLMESH_LIB_NAME}
 target_include_directories(${VOLMESH_LIB_NAME} PRIVATE
                            ${CMAKE_SOURCE_DIR}/include)
 
+# target_compile_options(${VOLMESH_LIB_NAME} PRIVATE -g)
 target_link_libraries(${VOLMESH_LIB_NAME}
                       PRIVATE
                       Eigen3::Eigen

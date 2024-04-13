@@ -1,18 +1,19 @@
+#include "volmesh/logger.h"
 #include "volmesh/tetmesh.h"
 #include "volmesh/sampletetmeshes.h"
+#include "volmesh/stlserializer.h"
 
 #include <iostream>
 #include <filesystem>
 #include <fmt/core.h>
 #include <cxxopts.hpp>
-#include <spdlog/spdlog.h>
 
 using namespace volmesh;
 
 namespace fs = std::filesystem;
 
 int main(int argc, const char* argv[]) {
-  spdlog::set_level(spdlog::level::debug);
+  SetLogFormat();
 
   cxxopts::Options options("makevolmesh", "Generate volumetric meshes from 3D surface meshes.");
 
@@ -31,11 +32,16 @@ int main(int argc, const char* argv[]) {
   }
 
   std::string surface_mesh_filepath = result["input"].as<std::string>();
-  spdlog::info("input surface mesh at [{}]", surface_mesh_filepath.c_str());
+  SPDLOG_INFO("input surface mesh at [{}]", surface_mesh_filepath.c_str());
 
-  std::unique_ptr<TetMesh> tet_mesh(new TetMesh());
-  createOneTetrahedra(*tet_mesh);
+  TetMesh tet_mesh;
+  createOneTetrahedra(tet_mesh);
+  tet_mesh.exportToVTK("/tmp/onetet.vtk", false);
 
-  std::unique_ptr<TriangleMesh> tri_mesh(new TriangleMesh());
-  tet_mesh->extractBoundaryTriangleMesh(*tri_mesh);
+  TriangleMesh tri_mesh;
+  tet_mesh.extractBoundaryTriangleMesh(tri_mesh);
+
+  WriteBinarySTL("/tmp/trimesh.stl", tri_mesh);
+
+  return 0;
 }

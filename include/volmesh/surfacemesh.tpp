@@ -28,6 +28,11 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::clear() {
 }
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+uint32_t SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::countFaces() const {
+  return static_cast<uint32_t>(hfaces_.size());
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
 uint32_t SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::countHalfFaces() const {
   return static_cast<uint32_t>(hfaces_.size());
 }
