@@ -3,6 +3,7 @@
 #include "volmesh/basetypes.h"
 #include "volmesh/index.h"
 #include "volmesh/halfface.h"
+#include "volmesh/aabb.h"
 
 #include <vector>
 #include <unordered_map>
@@ -45,6 +46,8 @@ namespace volmesh {
 
     bool findHalfEdge(const HalfEdge& in_hedge, HalfEdgeIndex& out_hedge_id) const;
     bool findHalfFace(const HalfFaceType& in_hface, HalfFaceIndex& out_hface_id) const;
+
+    AABB bounds() const;
 
   private:
     mutable std::mutex hfaces_mutex_;

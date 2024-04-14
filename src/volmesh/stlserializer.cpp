@@ -230,7 +230,7 @@ namespace volmesh {
       HalfEdge hedge1 = in_triangle_mesh.halfEdge(hface.halfEdgeIndex(1));
       HalfEdge hedge2 = in_triangle_mesh.halfEdge(hface.halfEdgeIndex(2));
 
-      SPDLOG_DEBUG("Fetching triangle vertices with ids [{}, {}, {}]",
+      SPDLOG_TRACE("Fetching triangle vertices with ids [{}, {}, {}]",
                    static_cast<uint32_t>(hedge0.start()),
                    static_cast<uint32_t>(hedge1.start()),
                    static_cast<uint32_t>(hedge2.start()));

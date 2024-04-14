@@ -16,6 +16,7 @@ set(VOLMESH_LIB_NAME "volmesh")
 
 add_library(${VOLMESH_LIB_NAME}
             STATIC
+            src/volmesh/aabb.cpp
             src/volmesh/halfedge.cpp
             src/volmesh/index.cpp
             src/volmesh/logger.cpp

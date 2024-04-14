@@ -128,7 +128,7 @@ bool TetMesh::extractBoundaryTriangleMesh(volmesh::TriangleMesh& out_triangle_me
     const uint32_t ib = hedge1.start();
     const uint32_t ic = hedge2.start();
 
-    SPDLOG_INFO("Triangle {} of {} = [{}, {}, {}]", i + 1, orphan_hfaces.size(), ia, ib, ic);
+    SPDLOG_TRACE("Triangle {} of {} = [{}, {}, {}]", i + 1, orphan_hfaces.size(), ia, ib, ic);
 
     const vec3 a = vertex(hedge0.start());
     const vec3 b = vertex(hedge1.start());

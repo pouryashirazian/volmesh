@@ -196,3 +196,32 @@ bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::findHalfFace(const SurfaceMesh
 
   return false;
 }
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+AABB SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::bounds() const {
+  const size_t count_vertices = countVertices();
+  if(count_vertices == 0) {
+    return AABB();
+  }
+
+  real_t lx = std::numeric_limits<real_t>::max();
+  real_t ly = std::numeric_limits<real_t>::max();
+  real_t lz = std::numeric_limits<real_t>::max();
+
+  real_t ux = std::numeric_limits<real_t>::min();
+  real_t uy = std::numeric_limits<real_t>::min();
+  real_t uz = std::numeric_limits<real_t>::min();
+
+  for(size_t i=0; i < count_vertices; i++) {
+    const vec3 v = vertex(VertexIndex::create(i));
+    lx = std::min<real_t>(lx, v.x());
+    ly = std::min<real_t>(ly, v.y());
+    lz = std::min<real_t>(lz, v.z());
+
+    ux = std::max<real_t>(ux, v.x());
+    uy = std::max<real_t>(uy, v.y());
+    uz = std::max<real_t>(uz, v.z());
+  }
+
+  return AABB(vec3(lx, ly, lz), vec3(ux, uy, uz));
+}
