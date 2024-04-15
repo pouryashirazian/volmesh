@@ -35,14 +35,16 @@ int main(int argc, const char* argv[]) {
   SPDLOG_INFO("input surface mesh at [{}]", surface_mesh_filepath.c_str());
 
   TetMesh tet_mesh;
-  //createOneTetrahedra(tet_mesh);
-  createSphericalShell(tet_mesh);
+  createOneTetrahedra(tet_mesh);
+  // createSphericalShell(tet_mesh);
   tet_mesh.exportToVTK("/tmp/shell.vtk", false);
 
   TriangleMesh tri_mesh;
   tet_mesh.extractBoundaryTriangleMesh(tri_mesh);
 
   WriteBinarySTL("/tmp/shell.stl", tri_mesh);
+
+  tri_mesh.computePerEdgePseudoNormals();
 
   return 0;
 }

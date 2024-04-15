@@ -25,6 +25,7 @@ real_t SignedDistanceField::spacing() const {
 bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
                                    const vec3& expansion,
                                    real_t spacing) {
+  //computes a bounding box that contains the triangle mesh
   bounds_ = in_mesh.bounds();
   bounds_.expand(expansion);
 }

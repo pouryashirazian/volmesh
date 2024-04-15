@@ -64,6 +64,37 @@ SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::halfFace(const HalfFaceIndex& in_hf
 }
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+vec3 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::halfFaceNormal(const HalfFaceIndex& in_hface_id) const {
+  if(hasHalfFaceNormals() == false) {
+    throw std::out_of_range("This triangle mesh does not have per face normals.");
+  }
+
+  if(in_hface_id.get() < hface_normals_.size()) {
+    std::lock_guard<std::mutex> lck(hfaces_mutex_);
+    return hface_normals_[in_hface_id.get()];
+  } else {
+    throw std::out_of_range("The supplied half-face id is out of range");
+  }
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+std::array<vec3, kNumEdgesPerFace>
+SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::halfFaceVertices(const HalfFaceIndex& in_hface_id) const {
+  if(in_hface_id.get() < countHalfFaces()) {
+    const HalfFaceType hface = halfFace(in_hface_id);
+
+    std::array<vec3, kNumEdgesPerFace> face_vertices;
+    for(uint32_t i=0; i < kNumEdgesPerFace; i++) {
+      face_vertices[i] = vertex(halfEdge(hface.halfEdgeIndex(i)).start());
+    }
+
+    return face_vertices;
+  } else {
+    throw std::out_of_range("The supplied half-face id is out of range");
+  }
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
 const HalfEdge&
 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::halfEdge(const HalfEdgeIndex& in_hedge_id) const {
   if(in_hedge_id.get() < countHalfEdges()) {
@@ -75,7 +106,7 @@ SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::halfEdge(const HalfEdgeIndex& in_he
 }
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
-const vec3 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::vertex(const VertexIndex& in_vertex_id) const {
+vec3 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::vertex(const VertexIndex& in_vertex_id) const {
   const uint64_t index = in_vertex_id.get();
   if(index < countVertices()) {
     std::lock_guard<std::mutex> lck(vertices_mutex_);
@@ -198,6 +229,39 @@ bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::findHalfFace(const SurfaceMesh
 }
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::getIncidentHalfFacesPerHalfEdge(const HalfEdgeIndex& in_hedge_id,
+                                                                                  std::vector<HalfFaceIndex>& out_incident_hface_ids) const {
+
+  if(in_hedge_id.get() < static_cast<uint32_t>(incident_hfaces_per_hedge_.size())) {
+    std::lock_guard<std::mutex> lock(hfaces_mutex_);
+    out_incident_hface_ids.reserve(incident_hfaces_per_hedge_[in_hedge_id.get()].size());
+    for(const auto it: incident_hfaces_per_hedge_[in_hedge_id.get()]) {
+      out_incident_hface_ids.emplace_back(HalfFaceIndex::create(it));
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::getIncidentHalfEdgesPerVertex(const VertexIndex& in_vertex_id,
+                                                                                std::vector<HalfEdgeIndex>& out_incident_hedge_ids) const {
+  if(in_vertex_id.get() < static_cast<uint32_t>(incident_hedges_per_vertex_.size())) {
+    std::lock_guard<std::mutex> lock(hedges_mutex_);
+    out_incident_hedge_ids.reserve(incident_hedges_per_vertex_[in_vertex_id.get()].size());
+    for(const auto it: incident_hedges_per_vertex_[in_vertex_id.get()]) {
+      out_incident_hedge_ids.emplace_back(HalfEdgeIndex::create(it));
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
 AABB SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::bounds() const {
   const size_t count_vertices = countVertices();
   if(count_vertices == 0) {
@@ -224,4 +288,66 @@ AABB SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::bounds() const {
   }
 
   return AABB(vec3(lx, ly, lz), vec3(ux, uy, uz));
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::setAllHalfFaceNormals(const std::vector<vec3>& in_hface_normals) {
+  if(in_hface_normals.size() == countHalfFaces()) {
+    std::lock_guard<std::mutex> lock(hfaces_mutex_);
+    hface_normals_.clear();
+    hface_normals_.assign(in_hface_normals.begin(), in_hface_normals.end());
+
+    return true;
+  }
+
+  return false;
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::hasHalfFaceNormals() const {
+  return (hface_normals_.size() == countHalfFaces()) && (countHalfFaces() != 0);
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerEdgePseudoNormals() {
+  const bool compute_face_normals = (hasHalfFaceNormals() == false);
+
+  //resize pseudo normals to zero and reserve
+  {
+    std::lock_guard<std::mutex> lock(hedges_mutex_);
+    hedge_pseudo_normals_.resize(0);
+    hedge_pseudo_normals_.reserve(countHalfEdges());
+  }
+
+  //computes pseudo normals for all half-edges
+  for(uint32_t he = 0; he < countHalfEdges(); he+=2) {
+    std::vector<HalfFaceIndex> incident_hface_left;
+    std::vector<HalfFaceIndex> incident_hface_right;
+    getIncidentHalfFacesPerHalfEdge(HalfEdgeIndex::create(he), incident_hface_left);
+    getIncidentHalfFacesPerHalfEdge(HalfEdgeIndex::create(he + 1), incident_hface_right);
+
+    vec3 n1, n2;
+    if(compute_face_normals) {
+      const auto vertices_hface_left = halfFaceVertices(incident_hface_left[0]);
+      const auto vertices_hface_right = halfFaceVertices(incident_hface_right[0]);
+
+      n1 = (vertices_hface_left[1] - vertices_hface_left[0]).cross(vertices_hface_left[2] - vertices_hface_left[0]).normalized();
+      n2 = (vertices_hface_right[1] - vertices_hface_right[0]).cross(vertices_hface_right[2] - vertices_hface_right[0]).normalized();
+    } else {
+      n1 = halfFaceNormal(incident_hface_left[0]);
+      n2 = halfFaceNormal(incident_hface_right[0]);
+    }
+
+    const vec3 pseudo_normal = (M_PI * n1 + M_PI * n2).normalized();
+    {
+      std::lock_guard<std::mutex> lock(hedges_mutex_);
+      hedge_pseudo_normals_.emplace_back(pseudo_normal);
+      hedge_pseudo_normals_.emplace_back(pseudo_normal);
+    }
+  }
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerVertexPseudoNormals() {
+
 }

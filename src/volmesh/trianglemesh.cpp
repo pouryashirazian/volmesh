@@ -82,9 +82,19 @@ bool TriangleMesh::readFromList(const std::vector<vec3>& in_triangle_vertices,
   bool result = insertAllVertices(unique_vertices);
   size_t count_triangles = in_triangle_vertices.size() / 3;
   for(size_t i=0; i < count_triangles; i++) {
-    insertTriangle(indices[i * 3], indices[i * 3 + 1], indices[i * 3 + 2]);
+    try {
+      insertTriangle(indices[i * 3], indices[i * 3 + 1], indices[i * 3 + 2]);
+    }
+    catch(const std::invalid_argument& e) {
+      SPDLOG_ERROR("Failed to insert triangle [{}], error message [{}]",
+                   i,
+                   e.what());
+      result = false;
+    }
   }
 
+  //set all half-face normals
+  result &= setAllHalfFaceNormals(in_triangle_normals);
   result &= (countHalfFaces() == count_triangles);
 
   return result;

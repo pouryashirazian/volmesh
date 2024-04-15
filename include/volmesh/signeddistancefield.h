@@ -27,6 +27,7 @@ namespace volmesh {
     real_t compute(const vec3& p) const;
 
     SignedDistanceField& operator=(const SignedDistanceField& rhs);
+
   private:
     AABB bounds_;
     real_t spacing_ = kDefaultSpacing;

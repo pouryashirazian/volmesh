@@ -139,7 +139,8 @@ namespace volmesh {
     }
 
     stlfile.close();
-    return true;
+
+    return out_triangle_mesh.readFromList(vertices, per_face_normals);
   }
 
   bool ReadBinarySTL(const std::string& in_mesh_filepath,
@@ -201,6 +202,17 @@ namespace volmesh {
 
   bool WriteBinarySTL(const std::string& in_mesh_filepath,
                       const TriangleMesh& in_triangle_mesh) {
+    //check the triangle mesh
+    if(in_triangle_mesh.countFaces() == 0) {
+      SPDLOG_ERROR("The supplied triangle mesh has zero faces");
+      return false;
+    }
+
+    //show a warning message if another file exists in the same location
+    if(std::filesystem::exists(std::filesystem::path(in_mesh_filepath)) == true) {
+      SPDLOG_WARN("Another file with the same name already exists under [{}]", in_mesh_filepath.c_str());
+    }
+
     //open the file
     std::ofstream stlfile(in_mesh_filepath, std::ios::binary);
     if(stlfile.is_open() == false) {
@@ -225,20 +237,19 @@ namespace volmesh {
     uint16_t attr = 0;
 
     for(uint32_t i = 0; i < triangles_count; i++) {
-      TriangleMesh::HalfFaceType hface = in_triangle_mesh.halfFace(HalfFaceIndex::create(i));
-      HalfEdge hedge0 = in_triangle_mesh.halfEdge(hface.halfEdgeIndex(0));
-      HalfEdge hedge1 = in_triangle_mesh.halfEdge(hface.halfEdgeIndex(1));
-      HalfEdge hedge2 = in_triangle_mesh.halfEdge(hface.halfEdgeIndex(2));
+      const HalfFaceIndex hface_id = HalfFaceIndex::create(i);
 
-      SPDLOG_TRACE("Fetching triangle vertices with ids [{}, {}, {}]",
-                   static_cast<uint32_t>(hedge0.start()),
-                   static_cast<uint32_t>(hedge1.start()),
-                   static_cast<uint32_t>(hedge2.start()));
+      std::array<vec3, 3> face_vertices = in_triangle_mesh.halfFaceVertices(hface_id);
+      const vec3 a = face_vertices[0];
+      const vec3 b = face_vertices[1];
+      const vec3 c = face_vertices[2];
 
-      const vec3 a = in_triangle_mesh.vertex(hedge0.start());
-      const vec3 b = in_triangle_mesh.vertex(hedge1.start());
-      const vec3 c = in_triangle_mesh.vertex(hedge2.start());
-      const vec3 normal = (b - a).cross(c - a).normalized();
+      vec3 normal({0.0, 0.0, 1.0});
+      if(in_triangle_mesh.hasHalfFaceNormals() == true) {
+        normal = in_triangle_mesh.halfFaceNormal(hface_id);
+      } else {
+        normal = (b - a).cross(c - a).normalized();
+      }
 
       postions_float32[0] = static_cast<float>(a[0]);
       postions_float32[1] = static_cast<float>(a[1]);
