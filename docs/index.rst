@@ -10,6 +10,11 @@ Welcome to VolMesh's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+C++ Classes
+-----------
+
+.. doxygenclass:: volmesh::AABB
+    :members:
 
 
 Indices and tables

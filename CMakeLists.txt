@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # define all build options here
-option(BUILD_DOCS "Build documentation" OFF)
+option(BUILD_DOCS "Build documentation" ON)
 mark_as_advanced(BUILD_DOCS)
 
 #----------------------------------------------------------------------------------
