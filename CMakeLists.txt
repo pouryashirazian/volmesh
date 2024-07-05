@@ -6,6 +6,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# define all build options here
+option(BUILD_DOCS "Build documentation" OFF)
+mark_as_advanced(BUILD_DOCS)
+
+#----------------------------------------------------------------------------------
+# Find external packages
+#----------------------------------------------------------------------------------
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
@@ -41,3 +48,8 @@ target_link_libraries(${VOLMESH_LIB_NAME}
 
 add_subdirectory(test)
 add_subdirectory(apps)
+
+if(BUILD_DOCS)
+  set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+  add_subdirectory(docs)
+endif()
