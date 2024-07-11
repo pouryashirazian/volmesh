@@ -106,6 +106,16 @@ SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::halfEdge(const HalfEdgeIndex& in_he
 }
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+vec3 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::halfEdgePseudoNormal(const HalfEdgeIndex& in_hedge_id) const {
+  if(in_hedge_id.get() < hedge_pseudo_normals_.size()) {
+    std::lock_guard<std::mutex> lck(hedges_mutex_);
+    return hedge_pseudo_normals_[in_hedge_id.get()];
+  } else {
+    throw std::out_of_range("There is no pseudo normal associated with the supplied half-edge id");
+  }
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
 vec3 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::vertex(const VertexIndex& in_vertex_id) const {
   const uint64_t index = in_vertex_id.get();
   if(index < countVertices()) {

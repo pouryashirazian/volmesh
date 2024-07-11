@@ -41,6 +41,8 @@ namespace volmesh {
     std::array<vec3, kNumEdgesPerFace> halfFaceVertices(const HalfFaceIndex& in_hface_id) const;
 
     const HalfEdge& halfEdge(const HalfEdgeIndex& in_hedge_id) const;
+    vec3 halfEdgePseudoNormal(const HalfEdgeIndex& in_hedge_id) const;
+
     vec3 vertex(const VertexIndex& in_vertex_id) const;
 
     bool insertAllVertices(const std::vector<vec3>& in_vertices);

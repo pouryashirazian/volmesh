@@ -5,7 +5,7 @@
 namespace volmesh {
 
 /*!
-* \brief Axis Aligned Bounding Box (AABB): defines a tight bounding box for geometry
+* \brief Axis Aligned Bounding Box (AABB) is used as an accelerator structure in many geometry processing algorithms.
 */
 class AABB {
 public:
