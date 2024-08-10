@@ -9,7 +9,6 @@
 [] - Add hexmesh
 [] - export to JSON
 [] - Python interface
-[] - documentation and sample images
 
 [x] - tetmesh writeToList
 [x] - Half-Edge data structure

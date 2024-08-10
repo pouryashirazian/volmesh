@@ -129,6 +129,16 @@ vec3 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::vertex(const VertexIndex& in_v
 }
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+vec3 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::vertexPseudoNormal(const VertexIndex& in_vertex_id) const {
+  if(in_vertex_id.get() < vertex_pseudo_normals_.size()) {
+    std::lock_guard<std::mutex> lck(vertices_mutex_);
+    return vertex_pseudo_normals_[in_vertex_id.get()];
+  } else {
+    throw std::out_of_range("There is no pseudo normal associated with the supplied vertex id");
+  }
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
 bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::insertAllVertices(const std::vector<vec3>& in_vertices) {
   if(in_vertices.size() != 0) {
     {
@@ -319,7 +329,40 @@ bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::hasHalfFaceNormals() const {
 }
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
-void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerEdgePseudoNormals() {
+bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::hasHalfEdgePseudoNormals() const {
+  return (hedge_pseudo_normals_.size() == countHalfEdges()) && (countHalfEdges() != 0);
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+bool SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::hasVertexPseudoNormals() const {
+  return (vertex_pseudo_normals_.size() == countVertices()) && (countVertices() != 0);
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computeHalfFaceNormals() {
+  if(countHalfFaces() == 0) {
+    return;
+  }
+
+  //clear the normals
+  if(hface_normals_.size() != 0) {
+    std::lock_guard<std::mutex> lock(hfaces_mutex_);
+    hface_normals_.clear();
+  }
+
+  const uint32_t count_hfaces = countHalfFaces();
+
+  std::lock_guard<std::mutex> lock(hfaces_mutex_);
+  hface_normals_.resize(count_hfaces);
+  for(uint32_t hf = 0; hf < count_hfaces; hf++) {
+    const auto hface_vertices = halfFaceVertices(HalfFaceIndex::create(hf));
+    vec3 normal = (hface_vertices[1] - hface_vertices[0]).cross(hface_vertices[2] - hface_vertices[0]).normalized();
+    hface_normals_[hf] = normal;
+  }
+}
+
+template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
+void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computeHalfEdgePseudoNormals() {
   const bool compute_face_normals = (hasHalfFaceNormals() == false);
 
   //resize pseudo normals to zero and reserve
@@ -359,5 +402,55 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerEdgePseudoNormals() 
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
 void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerVertexPseudoNormals() {
+  const uint32_t count_vertices = countVertices();
+  if(count_vertices == 0) {
+    return;
+  }
 
+  //make sure we have per face normals
+  if(hasHalfFaceNormals() == false) {
+    computeHalfFaceNormals();
+  }
+
+  //delete all vertex normals
+  {
+    std::lock_guard<std::mutex> lk(vertices_mutex_);
+    vertex_pseudo_normals_.resize(0);
+  }
+
+  //loop over all vertices and find all incident half-edges
+  for(uint32_t vid=0; vid < count_vertices; vid++) {
+    const VertexIndex vertex_id = VertexIndex::create(vid);
+
+    //fetch all half edges incident to vertex
+    std::vector<HalfEdgeIndex> incident_hedge_ids;
+    getIncidentHalfEdgesPerVertex(vertex_id, incident_hedge_ids);
+
+    //incident half-faces
+    std::vector<HalfFaceIndex> incident_hface_ids;
+    for(const auto hedge_id: incident_hedge_ids) {
+      const HalfEdge he = halfEdge(hedge_id);
+
+      std::cout << "vertex id: " << vertex_id << ", hedge: [" << he.start() << ", " << he.end() << "]" << std::endl;
+
+      incident_hface_ids.clear();
+      getIncidentHalfFacesPerHalfEdge(hedge_id, incident_hface_ids);
+
+      for(const auto hface_id: incident_hface_ids) {
+        const HalfFaceType hface = halfFace(hface_id);
+        const vec3 hface_normal = halfFaceNormal(hface_id);
+
+        std::array<uint32_t, 3> hface_vertex_ids;
+        std::cout << "vertex id: " << vertex_id << ", hface: [";
+        for(int i=0; i < kNumEdgesPerFace; i++) {
+          hface_vertex_ids[i] = halfEdge(hface.halfEdgeIndex(i)).start();
+          std::cout << hface_vertex_ids[i];
+          if(i < kNumEdgesPerFace - 1) {
+            std::cout << ", ";
+          }
+        }
+        std::cout << "]" << std::endl;
+      }
+    }
+  }
 }

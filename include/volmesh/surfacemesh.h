@@ -9,6 +9,7 @@
 #include <array>
 #include <unordered_map>
 #include <mutex>
+#include <iostream>
 
 namespace volmesh {
 
@@ -16,12 +17,14 @@ namespace volmesh {
     typedef HalfFace<kNumEdgesPerFace> HalfFaceType;
   };
 
+
   template <int kNumEdgesPerFace,
             template <int NumEdgesPerFace> class LayoutPolicy = SurfaceMeshLayout>
   class SurfaceMesh {
   public:
     using Layout = SurfaceMeshLayout<kNumEdgesPerFace>;
     using HalfFaceType = typename Layout::HalfFaceType;
+    using VertexIndexArray = std::array<VertexIndex, kNumEdgesPerFace>;
 
     SurfaceMesh();
     explicit SurfaceMesh(const SurfaceMesh& rhs);
@@ -44,6 +47,7 @@ namespace volmesh {
     vec3 halfEdgePseudoNormal(const HalfEdgeIndex& in_hedge_id) const;
 
     vec3 vertex(const VertexIndex& in_vertex_id) const;
+    vec3 vertexPseudoNormal(const VertexIndex& in_vertex_id) const;
 
     bool insertAllVertices(const std::vector<vec3>& in_vertices);
 
@@ -63,8 +67,11 @@ namespace volmesh {
 
     bool setAllHalfFaceNormals(const std::vector<vec3>& in_hface_normals);
     bool hasHalfFaceNormals() const;
+    bool hasHalfEdgePseudoNormals() const;
+    bool hasVertexPseudoNormals() const;
 
-    void computePerEdgePseudoNormals();
+    void computeHalfFaceNormals();
+    void computeHalfEdgePseudoNormals();
     void computePerVertexPseudoNormals();
 
   private:
