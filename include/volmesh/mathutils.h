@@ -14,4 +14,6 @@ namespace volmesh {
   * \return returns the computed angle in Radians
   */
   real_t ComputeInternalAngle(const vec3& a, const vec3& o, const vec3& c);
+
+  bool NormalsDirectionMatch(const vec3& n1, const vec3& n2, real_t tolerance_angle_degrees);
 }

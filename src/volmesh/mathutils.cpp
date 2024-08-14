@@ -18,4 +18,9 @@ namespace volmesh {
     return acos(oa.dot(oc));
   }
 
+  bool NormalsDirectionMatch(const vec3& n1, const vec3& n2, real_t tolerance_angle_degrees) {
+    const real_t angle = RadToDeg(acos(n1.dot(n2)));
+    return (angle < tolerance_angle_degrees);
+  }
+
 }

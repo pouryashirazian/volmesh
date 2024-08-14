@@ -73,7 +73,7 @@ namespace volmesh {
 
     void computeHalfFaceNormals();
     void computeHalfEdgePseudoNormals();
-    void computePerVertexPseudoNormals();
+    void computeVertexPseudoNormals();
 
   private:
     mutable std::mutex hfaces_mutex_;

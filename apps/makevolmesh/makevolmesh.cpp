@@ -45,7 +45,7 @@ int main(int argc, const char* argv[]) {
   WriteBinarySTL("/tmp/shell.stl", tri_mesh);
 
   // tri_mesh.computeHalfEdgePseudoNormals();
-  tri_mesh.computePerVertexPseudoNormals();
+  tri_mesh.computeVertexPseudoNormals();
 
   return 0;
 }

@@ -399,6 +399,9 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computeHalfEdgePseudoNormals()
       pseudo_normal = M_PI * halfFaceNormal(incident_hface_left[0]) + M_PI * halfFaceNormal(incident_hface_right[0]);
     }
 
+    // normalize the normal since we only need the direction
+    pseudo_normal.normalize();
+
     {
       std::lock_guard<std::mutex> lock(hedges_mutex_);
       hedge_pseudo_normals_.emplace_back(pseudo_normal);
@@ -408,7 +411,7 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computeHalfEdgePseudoNormals()
 }
 
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
-void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerVertexPseudoNormals() {
+void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computeVertexPseudoNormals() {
   const uint32_t count_vertices = countVertices();
   if(count_vertices == 0) {
     return;
@@ -483,6 +486,9 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerVertexPseudoNormals(
       } // end for incident faces
 
     } // end for incident half edges
+
+    // normalize the normal, since we only care about the direction
+    vertex_pseudo_normal.normalize();
 
     // set the current vertex pseudo normal
     {
