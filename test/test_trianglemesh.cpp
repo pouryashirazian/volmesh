@@ -5,11 +5,11 @@
 using namespace volmesh;
 
 TEST(TriangleMesh, Ctor) {
-  TriangleMesh tmesh;
   std::vector<vec3> vertices = {
     vec3(-4.0, 0.0, 0.0), vec3(4.0, 0.0, 0.0), vec3(0.0, 4.0, 0.0)
   };
 
+  TriangleMesh tmesh;
   EXPECT_TRUE(tmesh.insertAllVertices(vertices));
   HalfFaceIndex hface_id = tmesh.insertTriangle(vec3i(0, 1, 2));
   EXPECT_EQ(hface_id.get(), 0);
@@ -23,11 +23,11 @@ TEST(TriangleMesh, Ctor) {
 }
 
 TEST(TriangleMesh, IncidentHalfFacesPerHalfEdge) {
-  TriangleMesh tmesh;
   std::vector<vec3> vertices = {
     vec3(-4.0, 0.0, 0.0), vec3(4.0, 0.0, 0.0), vec3(0.0, 4.0, 0.0)
   };
 
+  TriangleMesh tmesh;
   EXPECT_TRUE(tmesh.insertAllVertices(vertices));
   HalfFaceIndex hface_id = tmesh.insertTriangle(vec3i(0, 1, 2));
 
@@ -46,11 +46,11 @@ TEST(TriangleMesh, IncidentHalfFacesPerHalfEdge) {
 }
 
 TEST(TriangleMesh, IncidentHalfEdgesPerVertex) {
-  TriangleMesh tmesh;
   std::vector<vec3> vertices = {
     vec3(-4.0, 0.0, 0.0), vec3(4.0, 0.0, 0.0), vec3(0.0, 4.0, 0.0)
   };
 
+  TriangleMesh tmesh;
   EXPECT_TRUE(tmesh.insertAllVertices(vertices));
   HalfFaceIndex hface_id = tmesh.insertTriangle(vec3i(0, 1, 2));
 
@@ -63,17 +63,68 @@ TEST(TriangleMesh, IncidentHalfEdgesPerVertex) {
 }
 
 TEST(TriangleMesh, HalfFaceNormals) {
-  TriangleMesh tmesh;
   std::vector<vec3> vertices = {
     vec3(-4.0, 0.0, 0.0), vec3(4.0, 0.0, 0.0), vec3(0.0, 4.0, 0.0)
   };
 
+  TriangleMesh tmesh;
   EXPECT_TRUE(tmesh.insertAllVertices(vertices));
   HalfFaceIndex hface_id = tmesh.insertTriangle(vec3i(0, 1, 2));
 
+  EXPECT_FALSE(tmesh.hasHalfFaceNormals());
   EXPECT_THROW(tmesh.halfFaceNormal(HalfFaceIndex::create(0)), std::out_of_range);
 
   std::vector<vec3> normals = {vec3(0, 0, 1)};
   tmesh.setAllHalfFaceNormals(normals);
+
+  EXPECT_TRUE(tmesh.hasHalfFaceNormals());
   EXPECT_NO_THROW(tmesh.halfFaceNormal(HalfFaceIndex::create(0)));
+}
+
+TEST(TriangleMesh, ComputeHalfFaceNormals) {
+  std::vector<vec3> vertices = {
+    vec3(-4.0, 0.0, 0.0), vec3(4.0, 0.0, 0.0), vec3(0.0, 4.0, 0.0)
+  };
+
+  TriangleMesh tmesh;
+  EXPECT_TRUE(tmesh.insertAllVertices(vertices));
+  HalfFaceIndex hface_id = tmesh.insertTriangle(vec3i(0, 1, 2));
+
+  EXPECT_FALSE(tmesh.hasHalfFaceNormals());
+  EXPECT_THROW(tmesh.halfFaceNormal(HalfFaceIndex::create(0)), std::out_of_range);
+
+  tmesh.computeHalfFaceNormals();
+
+  EXPECT_TRUE(tmesh.hasHalfFaceNormals());
+  EXPECT_NO_THROW(tmesh.halfFaceNormal(HalfFaceIndex::create(0)));
+
+  const vec3 computed_normal = tmesh.halfFaceNormal(HalfFaceIndex::create(0));
+  const vec3 expected_normal = vec3(0.0, 0.0, 1.0);
+  const real_t angle = RadToDeg(acos(computed_normal.dot(expected_normal)));
+  EXPECT_LT(angle, 1.0);
+}
+
+TEST(TriangleMesh, ComputeHalfEdgePseudoNormals) {
+  std::vector<vec3> vertices = {
+    vec3(-4.0, 0.0, 0.0), vec3(4.0, 0.0, 0.0), vec3(0.0, 4.0, 0.0)
+  };
+
+  TriangleMesh tmesh;
+  EXPECT_TRUE(tmesh.insertAllVertices(vertices));
+  HalfFaceIndex hface_id = tmesh.insertTriangle(vec3i(0, 1, 2));
+
+  EXPECT_FALSE(tmesh.hasHalfEdgePseudoNormals());
+  EXPECT_THROW(tmesh.halfEdgePseudoNormal(HalfEdgeIndex::create(0)), std::out_of_range);
+
+  tmesh.computeHalfEdgePseudoNormals();
+
+  EXPECT_TRUE(tmesh.hasHalfEdgePseudoNormals());
+  EXPECT_NO_THROW(tmesh.halfEdgePseudoNormal(HalfEdgeIndex::create(0)));
+
+  for(uint32_t i=0; i < tmesh.countHalfEdges(); i++) {
+    const vec3 computed_normal = tmesh.halfEdgePseudoNormal(HalfEdgeIndex::create(i)).normalized();
+    const vec3 expected_normal = vec3(0.0, 0.0, 1.0);
+    const real_t angle = RadToDeg(acos(computed_normal.dot(expected_normal)));
+    EXPECT_LT(angle, 1.0);
+  }
 }

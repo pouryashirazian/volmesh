@@ -1,6 +1,7 @@
 #pragma once
 
 #include "volmesh/basetypes.h"
+#include "volmesh/mathutils.h"
 #include "volmesh/index.h"
 #include "volmesh/halfface.h"
 #include "volmesh/aabb.h"

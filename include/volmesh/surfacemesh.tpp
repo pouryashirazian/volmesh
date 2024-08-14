@@ -344,20 +344,22 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computeHalfFaceNormals() {
     return;
   }
 
-  //clear the normals
-  if(hface_normals_.size() != 0) {
-    std::lock_guard<std::mutex> lock(hfaces_mutex_);
-    hface_normals_.clear();
-  }
-
   const uint32_t count_hfaces = countHalfFaces();
 
-  std::lock_guard<std::mutex> lock(hfaces_mutex_);
-  hface_normals_.resize(count_hfaces);
+  // resize container for the expected count
+  {
+    std::lock_guard<std::mutex> lock(hfaces_mutex_);
+    hface_normals_.resize(count_hfaces);
+  }
+
   for(uint32_t hf = 0; hf < count_hfaces; hf++) {
     const auto hface_vertices = halfFaceVertices(HalfFaceIndex::create(hf));
-    vec3 normal = (hface_vertices[1] - hface_vertices[0]).cross(hface_vertices[2] - hface_vertices[0]).normalized();
-    hface_normals_[hf] = normal;
+    const vec3 normal = (hface_vertices[1] - hface_vertices[0]).cross(hface_vertices[2] - hface_vertices[0]).normalized();
+
+    {
+      std::lock_guard<std::mutex> lock(hfaces_mutex_);
+      hface_normals_[hf] = normal;
+    }
   }
 }
 
@@ -379,19 +381,24 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computeHalfEdgePseudoNormals()
     getIncidentHalfFacesPerHalfEdge(HalfEdgeIndex::create(he), incident_hface_left);
     getIncidentHalfFacesPerHalfEdge(HalfEdgeIndex::create(he + 1), incident_hface_right);
 
-    vec3 n1, n2;
-    if(compute_face_normals) {
-      const auto vertices_hface_left = halfFaceVertices(incident_hface_left[0]);
-      const auto vertices_hface_right = halfFaceVertices(incident_hface_right[0]);
+    vec3 pseudo_normal(0.0, 0.0, 0.0);
 
-      n1 = (vertices_hface_left[1] - vertices_hface_left[0]).cross(vertices_hface_left[2] - vertices_hface_left[0]).normalized();
-      n2 = (vertices_hface_right[1] - vertices_hface_right[0]).cross(vertices_hface_right[2] - vertices_hface_right[0]).normalized();
+    if(compute_face_normals) {
+      if(incident_hface_left.size() != 0) {
+        const auto vertices_hface_left = halfFaceVertices(incident_hface_left[0]);
+        const vec3 n1 = (vertices_hface_left[1] - vertices_hface_left[0]).cross(vertices_hface_left[2] - vertices_hface_left[0]).normalized();
+        pseudo_normal = pseudo_normal + M_PI * n1;
+      }
+
+      if(incident_hface_right.size() != 0) {
+        const auto vertices_hface_right = halfFaceVertices(incident_hface_right[0]);
+        const vec3 n2 = (vertices_hface_right[1] - vertices_hface_right[0]).cross(vertices_hface_right[2] - vertices_hface_right[0]).normalized();
+        pseudo_normal = pseudo_normal + M_PI * n2;
+      }
     } else {
-      n1 = halfFaceNormal(incident_hface_left[0]);
-      n2 = halfFaceNormal(incident_hface_right[0]);
+      pseudo_normal = M_PI * halfFaceNormal(incident_hface_left[0]) + M_PI * halfFaceNormal(incident_hface_right[0]);
     }
 
-    const vec3 pseudo_normal = (M_PI * n1 + M_PI * n2).normalized();
     {
       std::lock_guard<std::mutex> lock(hedges_mutex_);
       hedge_pseudo_normals_.emplace_back(pseudo_normal);
@@ -415,23 +422,21 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerVertexPseudoNormals(
   //delete all vertex normals
   {
     std::lock_guard<std::mutex> lk(vertices_mutex_);
-    vertex_pseudo_normals_.resize(0);
+    vertex_pseudo_normals_.resize(count_vertices);
   }
 
   //loop over all vertices and find all incident half-edges
   for(uint32_t vid=0; vid < count_vertices; vid++) {
     const VertexIndex vertex_id = VertexIndex::create(vid);
+    vec3 vertex_pseudo_normal(0.0, 0.0, 0.0);
 
     //fetch all half edges incident to vertex
     std::vector<HalfEdgeIndex> incident_hedge_ids;
     getIncidentHalfEdgesPerVertex(vertex_id, incident_hedge_ids);
 
-    //incident half-faces
     std::vector<HalfFaceIndex> incident_hface_ids;
     for(const auto hedge_id: incident_hedge_ids) {
       const HalfEdge he = halfEdge(hedge_id);
-
-      std::cout << "vertex id: " << vertex_id << ", hedge: [" << he.start() << ", " << he.end() << "]" << std::endl;
 
       incident_hface_ids.clear();
       getIncidentHalfFacesPerHalfEdge(hedge_id, incident_hface_ids);
@@ -440,17 +445,50 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computePerVertexPseudoNormals(
         const HalfFaceType hface = halfFace(hface_id);
         const vec3 hface_normal = halfFaceNormal(hface_id);
 
-        std::array<uint32_t, 3> hface_vertex_ids;
-        std::cout << "vertex id: " << vertex_id << ", hface: [";
+        uint32_t adjacent_vertex_ids[2];
+        int adjacent_vertex_counter = 0;
+
+        // gather all vertices associated with this face
         for(int i=0; i < kNumEdgesPerFace; i++) {
-          hface_vertex_ids[i] = halfEdge(hface.halfEdgeIndex(i)).start();
-          std::cout << hface_vertex_ids[i];
-          if(i < kNumEdgesPerFace - 1) {
-            std::cout << ", ";
+          if(halfEdge(hface.halfEdgeIndex(i)).start() == vertex_id) {
+            adjacent_vertex_ids[adjacent_vertex_counter] = halfEdge(hface.halfEdgeIndex(i)).end();
+            adjacent_vertex_counter++;
+          }
+          else if(halfEdge(hface.halfEdgeIndex(i)).end() == vertex_id) {
+            adjacent_vertex_ids[adjacent_vertex_counter] = halfEdge(hface.halfEdgeIndex(i)).start();
+            adjacent_vertex_counter++;
+          }
+
+          //exit the loop if we already found both adjacent vertices
+          if(adjacent_vertex_counter == 2) {
+            break;
           }
         }
-        std::cout << "]" << std::endl;
-      }
+
+        assert(adjacent_vertex_counter == 2);
+
+        // compute the internal angle at the target vertex
+        const real_t angle = ComputeInternalAngle(vertex(VertexIndex::create(adjacent_vertex_ids[0])),
+                                                  vertex(vertex_id),
+                                                  vertex(VertexIndex::create(adjacent_vertex_ids[1])));
+
+        vertex_pseudo_normal = vertex_pseudo_normal + angle * hface_normal;
+
+        // std::cout << "vertex id: " << vertex_id << ", angle: ["
+        //              << adjacent_vertex_ids[0] << ", "
+        //              << vertex_id << ", "
+        //              << adjacent_vertex_ids[1] << "] = "
+        //              << RadToDeg(angle) << std::endl;
+
+      } // end for incident faces
+
+    } // end for incident half edges
+
+    // set the current vertex pseudo normal
+    {
+      std::lock_guard<std::mutex> lk(vertices_mutex_);
+      vertex_pseudo_normals_[vertex_id] = vertex_pseudo_normal;
     }
-  }
+
+  } // end for vertices
 }

@@ -12,4 +12,10 @@ namespace volmesh {
     return (in_angle_degrees * static_cast<real_t>(M_PI)) / static_cast<real_t>(180.0);
   }
 
+  real_t ComputeInternalAngle(const vec3& a, const vec3& o, const vec3& c) {
+    const vec3 oa = (a - o).normalized();
+    const vec3 oc = (c - o).normalized();
+    return acos(oa.dot(oc));
+  }
+
 }
