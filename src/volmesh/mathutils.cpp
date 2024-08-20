@@ -23,4 +23,24 @@ namespace volmesh {
     return (angle < tolerance_angle_degrees);
   }
 
+  real_t ComputeMinPointTriangleDistance(const vec3& p,
+                                         const vec3& a,
+                                         const vec3& b,
+                                         const vec3& c,
+                                         vec3& q) {
+    const vec3 n = (b - a).cross(c - a);
+    const real_t n_mag_squared = n.norm() * n.norm();
+    const vec3 tn = n.normalized();
+
+    //vector ap = p - a, takes us from the triangle point a to the query point p
+    //the dot product between ap and the triangle normal n is the distance
+    const real_t dist = (p - a).dot(tn);
+
+    // compute q in the plane of the triangle
+    const vec3 q = p - dist * tn;
+
+    // check if q is inside the triangle boundary
+    const vec3 u =
+  }
+
 }

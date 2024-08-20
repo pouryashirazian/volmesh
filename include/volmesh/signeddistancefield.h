@@ -14,23 +14,26 @@ namespace volmesh {
     SignedDistanceField(const SignedDistanceField& rhs);
     ~SignedDistanceField();
 
-    static constexpr const real_t kDefaultSpacing = 0.5;
+    static constexpr const real_t kDefaultVoxelSize = 0.5;
 
     void copyFrom(const SignedDistanceField& rhs);
     AABB bounds() const;
-    real_t spacing() const;
+    real_t voxelSize() const;
+    vec3i voxelsCount() const;
+    vec3i gridPointsCount() const;
+    uint64_t totalGridPointsCount() const;
 
     bool generate(const TriangleMesh& in_mesh,
                   const vec3& expansion,
-                  real_t spacing = kDefaultSpacing);
+                  real_t voxel_size = kDefaultVoxelSize);
 
-    real_t compute(const vec3& p) const;
+    real_t computeFieldValue(const vec3& p) const;
 
     SignedDistanceField& operator=(const SignedDistanceField& rhs);
-
   private:
+    real_t voxel_size_ = kDefaultVoxelSize;
     AABB bounds_;
-    real_t spacing_ = kDefaultSpacing;
+    std::vector<real_t> values_;
   };
 
 }

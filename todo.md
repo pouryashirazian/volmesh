@@ -15,9 +15,4 @@
 [x] - top-down traversal
 [x] - bottom-top traversal
 [x] - Add unit-tests
-
-# History
-
-## 4/14/2024
-- Need to add per vertex pseudo normals for SDF computations
-- Voxel grid setup and compute distance values
+[x] - compute per vertex, half-edge and half-face normals
