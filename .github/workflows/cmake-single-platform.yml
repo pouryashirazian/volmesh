@@ -46,11 +46,10 @@ jobs:
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: |
             cd ${{ github.workspace }} && source ./activate_venv.sh
-            cmake -B ${{github.workspace}}/build
-            -DCMAKE_CXX_COMPILER=g++
-            -DCMAKE_C_COMPILER=gcc
-            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+            cmake -B ${{github.workspace}}/build \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_C_COMPILER=gcc -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
             -S ${{ github.workspace }}
 
     - name: Build
