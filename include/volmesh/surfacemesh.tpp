@@ -395,7 +395,7 @@ void SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::computeHalfEdgePseudoNormals()
         const vec3 n2 = (vertices_hface_right[1] - vertices_hface_right[0]).cross(vertices_hface_right[2] - vertices_hface_right[0]).normalized();
         pseudo_normal = pseudo_normal + M_PI * n2;
       }
-    } else {
+    } else if (incident_hface_left.size() != 0 && incident_hface_right.size() != 0) {
       pseudo_normal = M_PI * halfFaceNormal(incident_hface_left[0]) + M_PI * halfFaceNormal(incident_hface_right[0]);
     }
 

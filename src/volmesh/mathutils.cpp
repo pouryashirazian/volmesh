@@ -39,11 +39,16 @@ namespace volmesh {
     return (angle < tolerance_angle_degrees);
   }
 
-  real_t PointLineSegmentDistance(const vec3& p, const vec3& a, const vec3& b, vec3& q) {
+  real_t PointLineSegmentDistance(const vec3& p,
+                                  const vec3& a,
+                                  const vec3& b,
+                                  vec3& q,
+                                  ClosestLineSegmentFeature& closest_feature) {
     const real_t len = (b - a).norm();
 
     // initialize the output intersection point x
     q = vec3(0.0, 0.0, 0.0);
+    closest_feature = ClosestLineSegmentFeature::kClosestLineSegmentFeatureNone;
 
     if (FuzzyIsNull(len)) {
       return std::numeric_limits<real_t>::max();
@@ -59,27 +64,49 @@ namespace volmesh {
 
     if (dist_q_a < 0) {
       q = a;
+      closest_feature = ClosestLineSegmentFeature::kClosestLineSegmentFeatureStart;
     } else if (dist_q_a > len) {
       q = b;
+      closest_feature = ClosestLineSegmentFeature::kClosestLineSegmentFeatureEnd;
     } else {
       // intersection point between a and b
       q = a + dist_q_a * u;
+      closest_feature = ClosestLineSegmentFeature::kClosestLineSegmentFeatureMid;
     }
 
     // point line distance is the distance between q and p
     return (p - q).norm();
   }
 
+
+  ClosestTriangleFeature ComputeClosestTriangleFeature(const ClosestLineSegmentFeature segment_feature,
+                                                       const TriangleVertex start_vertex,
+                                                       const TriangleVertex end_vertex) {
+    ClosestTriangleFeature result = ClosestTriangleFeature::kClosestTriangleFeatureNone;
+    if(segment_feature == kClosestLineSegmentFeatureStart) {
+      result = static_cast<ClosestTriangleFeature>(start_vertex);
+    }
+    else if(segment_feature == kClosestLineSegmentFeatureEnd) {
+      result = static_cast<ClosestTriangleFeature>(end_vertex);
+    }
+    else {
+      result = static_cast<ClosestTriangleFeature>(TriangleEdge(start_vertex, end_vertex));
+    }
+    return result;
+  }
+
   real_t PointTriangleDistance(const vec3& p,
                                const vec3& a,
                                const vec3& b,
                                const vec3& c,
-                               vec3& q) {
+                               vec3& q,
+                               ClosestTriangleFeature& closest_feature) {
     const vec3 n = (b - a).cross(c - a);
     const real_t n_mag_squared = n.squaredNorm();
 
-    real_t shortest_distance = std::numeric_limits<real_t>::max();
     q = vec3(0.0, 0.0, 0.0);
+    real_t shortest_distance = std::numeric_limits<real_t>::max();
+    closest_feature = ClosestTriangleFeature::kClosestTriangleFeatureNone;
 
     if (n_mag_squared == 0.0) {
       return shortest_distance;
@@ -111,6 +138,7 @@ namespace volmesh {
     if ((u > 0 && u < 1)&&(v > 0 && v < 1)&&(w > 0 && w < 1)) {
       q = pprime;
       shortest_distance = pprime_distance;
+      closest_feature = ClosestTriangleFeature::kClosestTriangleFeatureInside;
     } else {
       int count_zero_coords = FuzzyIsNull(u) + FuzzyIsNull(v) + FuzzyIsNull(w);
 
@@ -120,21 +148,33 @@ namespace volmesh {
         vec3 q_ab, q_bc, q_ca;
         real_t d_ab, d_bc, d_ca;
 
-        d_ab = PointLineSegmentDistance(p, a, b, q_ab);
-        d_bc = PointLineSegmentDistance(p, b, c, q_bc);
-        d_ca = PointLineSegmentDistance(p, c, a, q_ca);
+        ClosestLineSegmentFeature segment_ab;
+        ClosestLineSegmentFeature segment_bc;
+        ClosestLineSegmentFeature segment_ca;
+        d_ab = PointLineSegmentDistance(p, a, b, q_ab, segment_ab);
+        d_bc = PointLineSegmentDistance(p, b, c, q_bc, segment_bc);
+        d_ca = PointLineSegmentDistance(p, c, a, q_ca, segment_ca);
 
         if (d_ab < d_bc) {
-          shortest_distance = d_ab;
           q = q_ab;
+          shortest_distance = d_ab;
+          closest_feature = ComputeClosestTriangleFeature(segment_ab,
+                                                          TriangleVertex::kTriangleVertexA,
+                                                          TriangleVertex::kTriangleVertexB);
         } else {
-          shortest_distance = d_bc;
           q = q_bc;
+          shortest_distance = d_bc;
+          closest_feature = ComputeClosestTriangleFeature(segment_bc,
+                                                          TriangleVertex::kTriangleVertexB,
+                                                          TriangleVertex::kTriangleVertexC);
         }
 
         if (d_ca < shortest_distance) {
-          shortest_distance = d_ca;
           q = q_ca;
+          shortest_distance = d_ca;
+          closest_feature = ComputeClosestTriangleFeature(segment_ca,
+                                                          TriangleVertex::kTriangleVertexC,
+                                                          TriangleVertex::kTriangleVertexA);
         }
       } //compute distance to all vertices
       else if (count_zero_coords == 2) {
@@ -143,16 +183,19 @@ namespace volmesh {
         const real_t cp = (p - c).norm();
 
         if (ap < bp) {
-          shortest_distance = ap;
           q = a;
+          shortest_distance = ap;
+          closest_feature = ClosestTriangleFeature::kClosestTriangleFeatureVertexA;
         } else {
-          shortest_distance = bp;
           q = b;
+          shortest_distance = bp;
+          closest_feature = ClosestTriangleFeature::kClosestTriangleFeatureVertexB;
         }
 
         if (cp < shortest_distance) {
-          shortest_distance = cp;
           q = c;
+          shortest_distance = cp;
+          closest_feature = ClosestTriangleFeature::kClosestTriangleFeatureVertexC;
         }
       }
     }

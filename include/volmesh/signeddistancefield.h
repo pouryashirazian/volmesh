@@ -17,11 +17,20 @@ namespace volmesh {
     static constexpr const real_t kDefaultVoxelSize = 0.5;
 
     void copyFrom(const SignedDistanceField& rhs);
+
     AABB bounds() const;
+
     real_t voxelSize() const;
+
     vec3i voxelsCount() const;
+
     vec3i gridPointsCount() const;
+
     uint64_t totalGridPointsCount() const;
+
+    uint64_t gridPointId(const vec3i& coords) const;
+
+    vec4 gridPointVertexAndFieldValue(const vec3i& coords) const;
 
     bool generate(const TriangleMesh& in_mesh,
                   const vec3& expansion,
@@ -34,6 +43,7 @@ namespace volmesh {
     real_t voxel_size_ = kDefaultVoxelSize;
     AABB bounds_;
     std::vector<real_t> values_;
+    std::vector<real_t> signs_;
   };
 
 }
