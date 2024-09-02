@@ -141,14 +141,42 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
   SPDLOG_DEBUG("Total grid points count = [{}]", totalGridPointsCount());
   SPDLOG_DEBUG("Total memory usage by SDF in bytes = [{}]", getTotalMemoryUsageInBytes());
 
+  static const int kProgressReportPeriodSeconds = 5;
+
   // start timer
   auto t1 = std::chrono::high_resolution_clock::now();
 
+  uint64_t last_report_timestamp_seconds = 0;
+
   for(uint32_t iface = 0; iface < count_faces; iface++) {
+    auto tc = std::chrono::high_resolution_clock::now();
+    auto current_duration_seconds = std::chrono::duration_cast<std::chrono::seconds>(tc - t1);
+    if (current_duration_seconds.count() % kProgressReportPeriodSeconds == 0 &&
+        last_report_timestamp_seconds != current_duration_seconds.count()) {
+      const double progress = (static_cast<double>(iface + 1) * 100.0) / static_cast<double>(count_faces);
+      SPDLOG_INFO("progress [{} of {}], {:.2f} %", iface + 1, count_faces, progress);
+      last_report_timestamp_seconds = current_duration_seconds.count();
+    }
+
     const HalfFaceIndex hface_id = HalfFaceIndex::create(iface);
 
     const TriangleMesh::HalfFaceType hface = in_mesh.halfFace(hface_id);
     const auto hface_vertices = in_mesh.halfFaceVertices(hface_id);
+
+    // compute face bounding box and extend it by the width of the transition region
+    AABB face_aabb = ComputeTriangleAABB(hface_vertices);
+    face_aabb.expand(vec3(2.0 * voxel_size_, 2.0 * voxel_size_, 2.0 * voxel_size_));
+
+    const vec3 face_aabb_lower_local = (face_aabb.lower() - bounds_.lower()) / voxel_size_;
+
+    const int start_x = std::max(0, static_cast<int>(std::floor(face_aabb_lower_local.x())));
+    const int start_y = std::max(0, static_cast<int>(std::floor(face_aabb_lower_local.y())));
+    const int start_z = std::max(0, static_cast<int>(std::floor(face_aabb_lower_local.z())));
+
+    const vec3 face_aabb_voxels_extent = face_aabb.extent() / voxel_size_;
+    const int stop_x = std::min(gridpoints_count.x(), start_x + static_cast<int>(std::ceil(face_aabb_voxels_extent.x())));
+    const int stop_y = std::min(gridpoints_count.y(), start_y + static_cast<int>(std::ceil(face_aabb_voxels_extent.y())));
+    const int stop_z = std::min(gridpoints_count.z(), start_z + static_cast<int>(std::ceil(face_aabb_voxels_extent.z())));
 
     std::array<uint32_t, 3> face_vertex_ids;
     for(uint32_t i=0; i < 3; i++) {
@@ -156,9 +184,10 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
     }
 
     // loop over all voxels and compute the distance to all voxel points
-    for(int z = 0; z < gridpoints_count.z(); z++) {
-      for(int y = 0; y < gridpoints_count.y(); y++) {
-        for(int x = 0; x < gridpoints_count.x(); x++) {
+    for(int z = start_z; z < stop_z; z++) {
+      for(int y = start_y; y < stop_y; y++) {
+        for(int x = start_x; x < stop_x; x++) {
+
           const vec3i coords = vec3i(x, y, z);
 
           const vec4 pos_and_fmag = gridPointPositionAndMagnitude(coords);

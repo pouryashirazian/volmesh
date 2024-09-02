@@ -203,4 +203,17 @@ namespace volmesh {
     return shortest_distance;
   }
 
+  AABB ComputeTriangleAABB(const std::array<vec3, 3>& vertices) {
+
+    real_t lx = std::min<real_t>(vertices[0].x(), std::min<real_t>(vertices[1].x(), vertices[2].x()));
+    real_t ly = std::min<real_t>(vertices[0].y(), std::min<real_t>(vertices[1].y(), vertices[2].y()));
+    real_t lz = std::min<real_t>(vertices[0].z(), std::min<real_t>(vertices[1].z(), vertices[2].z()));
+
+    real_t ux = std::max<real_t>(vertices[0].x(), std::max<real_t>(vertices[1].x(), vertices[2].x()));
+    real_t uy = std::max<real_t>(vertices[0].y(), std::max<real_t>(vertices[1].y(), vertices[2].y()));
+    real_t uz = std::max<real_t>(vertices[0].z(), std::max<real_t>(vertices[1].z(), vertices[2].z()));
+
+    return AABB(vec3(lx, ly, lz), vec3(ux, uy, uz));
+  }
+
 }

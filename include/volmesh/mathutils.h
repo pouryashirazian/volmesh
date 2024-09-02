@@ -1,6 +1,9 @@
 #pragma once
 
 #include "volmesh/basetypes.h"
+#include "volmesh/aabb.h"
+
+#include <array>
 
 namespace volmesh {
 
@@ -80,4 +83,7 @@ namespace volmesh {
                                const vec3& c,
                                vec3& q,
                                ClosestTriangleFeature& closest_feature);
+
+  AABB ComputeTriangleAABB(const std::array<vec3, 3>& vertices);
+
 }
