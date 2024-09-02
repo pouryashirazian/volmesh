@@ -15,12 +15,11 @@ namespace fs = std::filesystem;
 int main(int argc, const char* argv[]) {
   SetLogFormat();
 
-  cxxopts::Options options("makevolmesh", "Generate volumetric meshes from 3D surface meshes.");
+  cxxopts::Options options("makesdf", "Generate signed distance field from 3D surface meshes.");
 
   options.add_options()
-    ("i,input", "Input surface mesh", cxxopts::value<std::string>())
-    ("o,output", "Output volumetric mesh", cxxopts::value<std::string>())
-    ("s,sdf", "Save intermediate SDF", cxxopts::value<bool>()->default_value("false"))
+    ("i,input", "Input surface mesh (STL format only)", cxxopts::value<std::string>())
+    ("o,output", "Output SDF in the VTK Image Data (VTI format)", cxxopts::value<std::string>())
     ("h,help", "Print usage")
   ;
 
@@ -31,9 +30,11 @@ int main(int argc, const char* argv[]) {
     exit(0);
   }
 
-  bool save_sdf = args["sdf"].as<bool>();
   std::string surface_mesh_filepath = args["input"].as<std::string>();
   SPDLOG_INFO("input surface mesh at [{}]", surface_mesh_filepath.c_str());
+
+  std::string sdf_filepath = args["output"].as<std::string>();
+  SPDLOG_INFO("output filepath at [{}]", sdf_filepath.c_str());
 
   TriangleMesh tri_mesh;
   if (volmesh::ReadSTL(surface_mesh_filepath, tri_mesh) == false) {
@@ -42,7 +43,9 @@ int main(int argc, const char* argv[]) {
   }
 
   AABB bounds = tri_mesh.bounds();
-  SPDLOG_INFO("mesh extent [{}, {}, {}]", bounds.extent().x(), bounds.extent().y(), bounds.extent().z());
+  SPDLOG_INFO("Mesh lower bounds [{}, {}, {}]", bounds.lower().x(), bounds.lower().y(), bounds.lower().z());
+  SPDLOG_INFO("Mesh upper bounds [{}, {}, {}]", bounds.upper().x(), bounds.upper().y(), bounds.upper().z());
+  SPDLOG_INFO("Mesh AABB extent [{}, {}, {}]", bounds.extent().x(), bounds.extent().y(), bounds.extent().z());
 
   tri_mesh.computeHalfEdgePseudoNormals();
   tri_mesh.computeVertexPseudoNormals();
@@ -50,8 +53,12 @@ int main(int argc, const char* argv[]) {
   const real_t voxel_size = 0.1;
   SignedDistanceField sdf;
   bool result = sdf.generate(tri_mesh, vec3(voxel_size, voxel_size, voxel_size), voxel_size);
-  if(result == true) {
-    SPDLOG_INFO("generated SDF");
+  if (result == true) {
+    if (sdf.save(sdf_filepath)) {
+      SPDLOG_INFO("Saved SDF under [{}]", sdf_filepath.c_str());
+    } else {
+      SPDLOG_ERROR("Failed when saving the SDF under [{}].", sdf_filepath.c_str());
+    }
   } else {
     SPDLOG_ERROR("Failed to generate SDF");
     return EXIT_FAILURE;

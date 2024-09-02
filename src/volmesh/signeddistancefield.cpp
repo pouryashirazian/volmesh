@@ -2,6 +2,10 @@
 #include "volmesh/logger.h"
 #include "volmesh/mathutils.h"
 
+#include <fstream>
+#include <filesystem>
+#include <chrono>
+
 using namespace volmesh;
 
 SignedDistanceField::SignedDistanceField() {
@@ -19,7 +23,9 @@ SignedDistanceField::~SignedDistanceField() {
 void SignedDistanceField::copyFrom(const SignedDistanceField& rhs) {
   voxel_size_ = rhs.voxel_size_;
   bounds_ = rhs.bounds_;
-  values_ = rhs.values_;
+
+  std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
+  magnitudes_ = rhs.magnitudes_;
   signs_ = rhs.signs_;
 }
 
@@ -49,20 +55,14 @@ uint64_t SignedDistanceField::totalGridPointsCount() const {
   return static_cast<uint32_t>(gpc.x()) * static_cast<uint32_t>(gpc.y()) * static_cast<uint32_t>(gpc.z());
 }
 
-uint64_t SignedDistanceField::gridPointId(const vec3i& coords) const {
-  const vec3i gridpoints_count = gridPointsCount();
-  if ((coords.x() < 0 || coords.x() >= gridpoints_count.x())||
-      (coords.y() < 0 || coords.y() >= gridpoints_count.y())||
-      (coords.z() < 0 || coords.z() >= gridpoints_count.z())) {
-    std::string message = fmt::format("The supplied grid point id [{}, {}, {}] is out of range, \
-                                       Correct values must be in range x = [{}, {}], y = [{}, {}], z = [{}, {}].",
-                                       coords.x(), coords.y(), coords.z(),
-                                       0, gridpoints_count.x() - 1,
-                                       0, gridpoints_count.y() - 1,
-                                       0, gridpoints_count.z() - 1);
-    throw std::out_of_range(message);
-  }
+uint64_t SignedDistanceField::getTotalMemoryUsageInBytes() const {
+  return sizeof(voxel_size_) + sizeof(bounds_) + totalGridPointsCount() * 2 * sizeof(real_t);
+}
 
+uint64_t SignedDistanceField::gridPointId(const vec3i& coords) const {
+  assertGridPointCoords(coords);
+
+  const vec3i gridpoints_count = gridPointsCount();
   const uint32_t nx = static_cast<uint32_t>(gridpoints_count.x());
   const uint32_t ny = static_cast<uint32_t>(gridpoints_count.y());
   const uint32_t nz = static_cast<uint32_t>(gridpoints_count.z());
@@ -71,14 +71,21 @@ uint64_t SignedDistanceField::gridPointId(const vec3i& coords) const {
           static_cast<uint32_t>(coords.x());
 }
 
-vec4 SignedDistanceField::gridPointVertexAndFieldValue(const vec3i& coords) const {
-  const uint64_t gridpoint_id = gridPointId(coords);
+vec3 SignedDistanceField::gridPointPosition(const vec3i& coords) const {
+  assertGridPointCoords(coords);
+
   const vec3 position = bounds_.lower() +
                         vec3(static_cast<real_t>(coords.x()) * voxel_size_,
                              static_cast<real_t>(coords.y()) * voxel_size_,
                              static_cast<real_t>(coords.z()) * voxel_size_);
+  return position;
+}
 
-  return vec4(position.x(), position.y(), position.z(), values_[gridpoint_id]);
+vec4 SignedDistanceField::gridPointPositionAndFieldValue(const vec3i& coords) const {
+  // gridPointPositionAndMagnitude will assert coords
+  vec4 result = gridPointPositionAndMagnitude(coords);
+  result.w() *= signs_[gridPointId(coords)] < 0 ? -1 : 1;
+  return result;
 }
 
 bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
@@ -107,24 +114,37 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
   // store requested voxel size
   voxel_size_ = voxel_size;
 
-  const vec3i voxels_count = voxelsCount();
-  SPDLOG_DEBUG("Number of voxels along x, y, and z axes are [{}, {}, {}]",
-               voxels_count.x(),
-               voxels_count.y(),
-               voxels_count.z());
-  values_.resize(totalGridPointsCount());
-  signs_.resize(totalGridPointsCount());
+  {
+    std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
+    magnitudes_.resize(totalGridPointsCount());
+    signs_.resize(totalGridPointsCount());
 
-  // initialize the voxel grid by settings all values to +infinity
-  std::fill(values_.begin(), values_.end(), std::numeric_limits<real_t>::max());
-  std::fill(signs_.begin(), signs_.end(), 0.0);
+    // initialize the voxel grid by settings all values to +infinity
+    std::fill(magnitudes_.begin(), magnitudes_.end(), std::numeric_limits<real_t>::max());
+    std::fill(signs_.begin(), signs_.end(), 0.0);
+  }
 
   // process all faces in the mesh
   const uint32_t count_faces = in_mesh.countFaces();
   const vec3i gridpoints_count = gridPointsCount();
 
-  for(uint32_t iface = 0; iface < count_faces; iface++) {
+  const vec3i voxels_count = voxelsCount();
 
+  // print some debug info
+  SPDLOG_DEBUG("Mesh faces = [{}], vertices = [{}]", in_mesh.countFaces(), in_mesh.countVertices());
+
+  SPDLOG_DEBUG("Number of voxels along x, y, and z axes are [{}, {}, {}], voxel size = [{}]",
+               voxels_count.x(),
+               voxels_count.y(),
+               voxels_count.z(),
+               voxel_size_);
+  SPDLOG_DEBUG("Total grid points count = [{}]", totalGridPointsCount());
+  SPDLOG_DEBUG("Total memory usage by SDF in bytes = [{}]", getTotalMemoryUsageInBytes());
+
+  // start timer
+  auto t1 = std::chrono::high_resolution_clock::now();
+
+  for(uint32_t iface = 0; iface < count_faces; iface++) {
     const HalfFaceIndex hface_id = HalfFaceIndex::create(iface);
 
     const TriangleMesh::HalfFaceType hface = in_mesh.halfFace(hface_id);
@@ -136,13 +156,16 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
     }
 
     // loop over all voxels and compute the distance to all voxel points
-    for(int x = 0; x < gridpoints_count.x(); x++) {
+    for(int z = 0; z < gridpoints_count.z(); z++) {
       for(int y = 0; y < gridpoints_count.y(); y++) {
-        for(int z = 0; z < gridpoints_count.z(); z++) {
+        for(int x = 0; x < gridpoints_count.x(); x++) {
           const vec3i coords = vec3i(x, y, z);
-          const vec4 xyzf = gridPointVertexAndFieldValue(coords);
-          const vec3 p = xyzf.head<3>();
+
+          const vec4 pos_and_fmag = gridPointPositionAndMagnitude(coords);
+          const vec3 p = pos_and_fmag.head<3>();
+          const real_t prev_dist = pos_and_fmag.w();
           vec3 q(0.0, 0.0, 0.0);
+
           ClosestTriangleFeature closest_feature;
 
           const real_t dist = PointTriangleDistance(p,
@@ -151,7 +174,8 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
                                                     hface_vertices[2],
                                                     q,
                                                     closest_feature);
-          if (dist < xyzf.w()) {
+
+          if ((dist < prev_dist) || FuzzyCompare(dist, prev_dist) == true) {
             // compute distance sign
             vec3 pseudo_normal = in_mesh.halfFaceNormal(hface_id);
 
@@ -191,34 +215,189 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
             const vec3 dir_vec_qp = p - q;
 
             const uint64_t gridpoint_id = gridPointId(coords);
-            const real_t current_distance = values_[gridpoint_id];
 
-            if (dist < current_distance) {
-              values_[gridpoint_id] = dist;
+            if (dist < prev_dist) {
+              std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
+
+              magnitudes_[gridpoint_id] = dist;
 
               // replace sign
               signs_[gridpoint_id] = dir_vec_qp.dot(pseudo_normal);
-            } else if (FuzzyCompare(dist, current_distance) == true) {
-              values_[gridpoint_id] = dist;
+            } else if (FuzzyCompare(dist, prev_dist) == true) {
+              std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
+
+              magnitudes_[gridpoint_id] = dist;
 
               // accumulate sign
               signs_[gridpoint_id] += dir_vec_qp.dot(pseudo_normal);
             }
-          }
+          } // if dist
         }
       }
     }
+  } // end for face
 
-  }
+  auto t2 = std::chrono::high_resolution_clock::now();
+
+  auto duration_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+  SPDLOG_INFO("Total time spent in generating SDF = [{}.{}] seconds.",
+               duration_milliseconds.count() / 1000,
+               duration_milliseconds.count() % 1000);
 
   return true;
 }
 
-real_t SignedDistanceField::computeFieldValue(const vec3& p) const {
-  return 0.0;
+real_t SignedDistanceField::fieldValue(const vec3& p) const {
+  // field is zero outside the bounding box
+  if (bounds_.contains(p) == false) {
+    return 0.0;
+  }
+
+  // find voxel coordinates
+
+  // map p to the local coordinate system of the voxel grid
+  vec3 q = (p - bounds_.lower()) / voxel_size_;
+
+  // voxel coords
+  const int ix = static_cast<int>(std::floor(q.x()));
+  const int iy = static_cast<int>(std::floor(q.y()));
+  const int iz = static_cast<int>(std::floor(q.z()));
+
+  // setup interpolators
+  const real_t tx = q.x() - static_cast<real_t>(ix);
+  const real_t ty = q.y() - static_cast<real_t>(iy);
+  const real_t tz = q.z() - static_cast<real_t>(iz);
+
+  //vXYZ
+  const real_t v000 = fieldValue(vec3i(ix, iy, iz));
+  const real_t v001 = fieldValue(vec3i(ix, iy, iz + 1));
+  const real_t v010 = fieldValue(vec3i(ix, iy + 1, iz));
+  const real_t v011 = fieldValue(vec3i(ix, iy + 1, iz + 1));
+  const real_t v100 = fieldValue(vec3i(ix + 1, iy, iz));
+  const real_t v101 = fieldValue(vec3i(ix + 1, iy, iz + 1));
+  const real_t v110 = fieldValue(vec3i(ix + 1, iy + 1, iz));
+  const real_t v111 = fieldValue(vec3i(ix + 1, iy + 1, iz + 1));
+
+  real_t result = (1 - tz) * ((1 - ty) * (v000 * (1 - tx) + v100 * tx) +
+                                   ty  * (v010 * (1 - tx) + v110 * tx)) +
+                  tz * ((1 - ty) * (v001 * (1 - tx) + v101 * tx) +
+                        ty  * (v011 * (1 - tx) + v111 * tx));
+
+  return result;
+}
+
+real_t SignedDistanceField::fieldValue(const vec3i& coords) const {
+  // gridPointId will assert coords
+  const uint64_t gridpoint_id = gridPointId(coords);
+
+  real_t field = 0.0;
+
+  {
+    std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
+    const real_t mag = magnitudes_[gridpoint_id];
+    field = signs_[gridpoint_id] < 0 ? - mag : mag;
+  }
+
+  return field;
+}
+
+bool SignedDistanceField::save(const std::string& filepath) const {
+  if (totalGridPointsCount() == 0) {
+    SPDLOG_ERROR("This instance is empty. Initialize before saving to disk");
+    return false;
+  }
+
+  if (std::filesystem::exists(filepath)) {
+    SPDLOG_WARN("Another file with the same name exists under [{}] and will be overwritten.", filepath.c_str());
+  }
+
+  std::ofstream file(filepath);
+  if (!file.is_open()) {
+    SPDLOG_ERROR("Failed to open file [{}] for writing", filepath.c_str());
+    return false;
+  }
+
+  const vec3i gridpoints_count = gridPointsCount();
+
+  // Write the VTI XML header
+  file << "<?xml version=\"1.0\"?>\n";
+  file << "<VTKFile type=\"ImageData\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
+  file << "  <ImageData WholeExtent=\"0 " << gridpoints_count.x() - 1 << " 0 " << gridpoints_count.y() - 1 << " 0 " << gridpoints_count.z() - 1 \
+        << "\" Origin=\"" << bounds_.lower().x() << " " << bounds_.lower().y() << " " << bounds_.lower().z() \
+        << "\" Spacing=\"" << voxel_size_ << " " << voxel_size_ << " " << voxel_size_ << "\">\n";
+  file << "    <Piece Extent=\"0 " << gridpoints_count.x() - 1 << " 0 " << gridpoints_count.y() - 1 << " 0 " << gridpoints_count.z() - 1 << "\">\n";
+  file << "      <PointData Scalars=\"SignedDistanceField\">\n";
+  file << "        <DataArray type=\"Float32\" Name=\"SignedDistanceField\" format=\"ascii\">\n";
+
+  // Write the SDF values
+  for(int z = 0; z < gridpoints_count.z(); z++) {
+    for(int y = 0; y < gridpoints_count.y(); y++) {
+      for(int x = 0; x < gridpoints_count.x(); x++) {
+        file << static_cast<float>(fieldValue(vec3i(x, y, z))) << " ";
+        if ((x + 1) % gridpoints_count.x() == 0) {
+          file << "\n";
+        }
+      }
+    }
+  }
+
+  // Close the XML tags
+  file << "        </DataArray>\n";
+  file << "      </PointData>\n";
+  file << "      <CellData>\n";
+  file << "      </CellData>\n";
+  file << "    </Piece>\n";
+  file << "  </ImageData>\n";
+  file << "</VTKFile>\n";
+
+  file.close();
+
+  return true;
+}
+
+bool SignedDistanceField::load(const std::string& filepath) {
+  return false;
 }
 
 SignedDistanceField& SignedDistanceField::operator=(const SignedDistanceField& rhs) {
   copyFrom(rhs);
   return *this;
+}
+
+bool SignedDistanceField::isValidGridPointCoords(const vec3i& coords, const vec3i& gridpoints_count) const {
+  bool is_valid = coords.x() >= 0 && coords.x() < gridpoints_count.x() && \
+                  coords.y() >= 0 && coords.y() < gridpoints_count.y() && \
+                  coords.z() >= 0 && coords.z() < gridpoints_count.z();
+  return is_valid;
+}
+
+void SignedDistanceField::assertGridPointCoords(const vec3i& coords) const {
+  const vec3i gridpoints_count = gridPointsCount();
+
+  if(isValidGridPointCoords(coords, gridpoints_count) == false) {
+    std::string message = fmt::format("The supplied grid point id [{}, {}, {}] is out of range, \
+                                       Correct values must be in range x = [{}, {}], y = [{}, {}], z = [{}, {}].",
+                                       coords.x(), coords.y(), coords.z(),
+                                       0, gridpoints_count.x() - 1,
+                                       0, gridpoints_count.y() - 1,
+                                       0, gridpoints_count.z() - 1);
+    throw std::out_of_range(message);
+  }
+}
+
+vec4 SignedDistanceField::gridPointPositionAndMagnitude(const vec3i& coords) const {
+  assertGridPointCoords(coords);
+
+  const vec3 position = bounds_.lower() +
+                        vec3(static_cast<real_t>(coords.x()) * voxel_size_,
+                             static_cast<real_t>(coords.y()) * voxel_size_,
+                             static_cast<real_t>(coords.z()) * voxel_size_);
+
+  real_t magnitude = 0.0;
+  {
+    std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
+    magnitude = magnitudes_[gridPointId(coords)];
+  }
+
+  return vec4(position.x(), position.y(), position.z(), magnitude);
 }

@@ -1,1 +1,1 @@
-add_subdirectory(makevolmesh)
+add_subdirectory(makesdf)

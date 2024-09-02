@@ -2,11 +2,14 @@
 
 #include "volmesh/trianglemesh.h"
 
+#include <mutex>
+
 namespace volmesh {
 
   /*!
   * \brief SignedDistanceField computes and stores the signed distance field (SDF) due to
-  * a surface triangle mesh. It provides an API to interpolate the SDF value due to a point in Cartesian space.
+  * a surface triangle mesh. It provides an API to interpolate the SDF value due to a point in
+  * the Cartesian space.
   */
   class SignedDistanceField {
   public:
@@ -28,22 +31,39 @@ namespace volmesh {
 
     uint64_t totalGridPointsCount() const;
 
+    uint64_t getTotalMemoryUsageInBytes() const;
+
     uint64_t gridPointId(const vec3i& coords) const;
 
-    vec4 gridPointVertexAndFieldValue(const vec3i& coords) const;
+    vec3 gridPointPosition(const vec3i& coords) const;
+
+    vec4 gridPointPositionAndFieldValue(const vec3i& coords) const;
 
     bool generate(const TriangleMesh& in_mesh,
                   const vec3& expansion,
                   real_t voxel_size = kDefaultVoxelSize);
 
-    real_t computeFieldValue(const vec3& p) const;
+    real_t fieldValue(const vec3& p) const;
+
+    real_t fieldValue(const vec3i& coords) const;
+
+    bool save(const std::string& filepath) const;
+
+    bool load(const std::string& filepath);
 
     SignedDistanceField& operator=(const SignedDistanceField& rhs);
+
+  private:
+    bool isValidGridPointCoords(const vec3i& coords, const vec3i& gridpoints_count) const;
+    void assertGridPointCoords(const vec3i& coords) const;
+    vec4 gridPointPositionAndMagnitude(const vec3i& coords) const;
+
   private:
     real_t voxel_size_ = kDefaultVoxelSize;
     AABB bounds_;
-    std::vector<real_t> values_;
+    std::vector<real_t> magnitudes_;
     std::vector<real_t> signs_;
+    mutable std::mutex magnitude_sign_mutex_;
   };
 
 }

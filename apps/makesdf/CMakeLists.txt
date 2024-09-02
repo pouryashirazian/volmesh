@@ -1,5 +1,5 @@
-project(makevolmesh)
-add_executable(${PROJECT_NAME} makevolmesh.cpp)
+project(makesdf)
+add_executable(${PROJECT_NAME} makesdf.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
                            ${CMAKE_SOURCE_DIR}/include)

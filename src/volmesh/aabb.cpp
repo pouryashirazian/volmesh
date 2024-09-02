@@ -50,6 +50,12 @@ bool AABB::intersects(const AABB& rhs) const {
          ((lower_.z() >= rhs.lower_.z()) && (lower_.z() <= rhs.upper_.z()));
 }
 
+bool AABB::contains(const vec3& p) const {
+  return (p.x() >= lower_.x()) && (p.x() <= upper_.x()) &&
+         (p.y() >= lower_.y()) && (p.y() <= upper_.y()) &&
+         (p.z() >= lower_.z()) && (p.z() <= upper_.z());
+}
+
 AABB& AABB::operator=(const AABB& rhs) {
   lower_ = rhs.lower_;
   upper_ = rhs.upper_;

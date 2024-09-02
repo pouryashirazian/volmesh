@@ -21,6 +21,7 @@ public:
   void expand(const real_t dx, const real_t dy, const real_t dz);
   void expand(const vec3& expansion);
   bool intersects(const AABB& rhs) const;
+  bool contains(const vec3& p) const;
 
   AABB& operator=(const AABB& rhs);
 private:
