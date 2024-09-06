@@ -52,7 +52,7 @@ jobs:
       id: strings
       shell: bash
       run: |
-        echo "vars-runner=${{ vars.RUNNER }}" >> "$GITHUB_OUTPUT"
+        echo "matrix-runner=${{ matrix.runner }}" >> "$GITHUB_OUTPUT"
 
 
     - name: Run Python bootstrap
