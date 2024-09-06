@@ -41,13 +41,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set env variables
-      if: ${{ matrix.os }} == "Linux"
-      run: echo "VCPKG_FORCE_SYSTEM_BINARIES=1" >> $GITHUB_ENV
+    # - name: Set env variables
+    #   if: ${{ matrix.os }} == "Linux"
+    #   run: echo "VCPKG_FORCE_SYSTEM_BINARIES=1" >> $GITHUB_ENV
 
-    - name: Test env variables
-      if: ${{ matrix.os }} == "Linux"
-      run: echo "VCPKG_FORCE_SYSTEM_BINARIES=${VCPKG_FORCE_SYSTEM_BINARIES}"
+    # - name: Test env variables
+    #   if: ${{ matrix.os }} == "Linux"
+    #   run: echo "VCPKG_FORCE_SYSTEM_BINARIES=${VCPKG_FORCE_SYSTEM_BINARIES}"
 
     - name: Run Python bootstrap
       shell: bash
