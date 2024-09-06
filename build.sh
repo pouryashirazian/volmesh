@@ -33,23 +33,26 @@ build() {
   BUILD_FOLDER_NAME=build-${DISTRO}-${BUILD_TYPE}
   BUILD_DIR=${DIR}/${BUILD_FOLDER_NAME}
 
-  export CMAKE_MAKE_PROGRAM="make"
-
   if [ ! -d "${DIR}/vcpkg" ]; then
     info "clone vcpkg"
     git clone https://github.com/Microsoft/vcpkg.git
     check_result_abort_failed $? "Failed when clonning vcpkg"
   fi
 
+  # vcpkg
+  unset VCPKG_FORCE_SYSTEM_BINARIES
   ./vcpkg/bootstrap-vcpkg.sh
   check_result_abort_failed $? "Failed when bootstrapping vcpkg"
 
+  # cmake config
+  CMAKE_MAKE_PROGRAM="make"
   CMAKE_BUILD_TYPE=$(camelcase $BUILD_TYPE)
   debug "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}"
 
   cmake -G "Unix Makefiles" -B ${BUILD_DIR} -S . -DCMAKE_TOOLCHAIN_FILE=${DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
   check_result_abort_failed $? "Failed when configuring the build with cmake"
 
+  # build
   cmake --build ${BUILD_DIR}
   check_result_abort_failed $? "build failed"
 
