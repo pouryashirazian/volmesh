@@ -45,7 +45,7 @@ build() {
   CMAKE_BUILD_TYPE=$(camelcase $BUILD_TYPE)
   debug "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}"
 
-  cmake -B ${BUILD_DIR} -S . -DCMAKE_TOOLCHAIN_FILE=${DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+  cmake -G "Unix Makefiles" -B ${BUILD_DIR} -S . -DCMAKE_TOOLCHAIN_FILE=${DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
   check_result_abort_failed $? "Failed when configuring the build with cmake"
 
   cmake --build ${BUILD_DIR}
