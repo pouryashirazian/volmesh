@@ -33,6 +33,8 @@ build() {
   BUILD_FOLDER_NAME=build-${DISTRO}-${BUILD_TYPE}
   BUILD_DIR=${DIR}/${BUILD_FOLDER_NAME}
 
+  export CMAKE_MAKE_PROGRAM="make"
+
   if [ ! -d "${DIR}/vcpkg" ]; then
     info "clone vcpkg"
     git clone https://github.com/Microsoft/vcpkg.git
