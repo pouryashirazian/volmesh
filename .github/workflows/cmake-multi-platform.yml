@@ -52,7 +52,7 @@ jobs:
       id: strings
       shell: bash
       run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "vars-runner=${{ vars.RUNNER }}" >> "$GITHUB_OUTPUT"
 
 
     - name: Run Python bootstrap
