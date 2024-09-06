@@ -40,7 +40,6 @@ build() {
   fi
 
   # vcpkg
-  unset VCPKG_FORCE_SYSTEM_BINARIES
   ./vcpkg/bootstrap-vcpkg.sh
   check_result_abort_failed $? "Failed when bootstrapping vcpkg"
 
