@@ -29,17 +29,14 @@ jobs:
         include:
           - os: macOS
             c_compiler: clang
-            cpp_compiler: clang
           - os: Linux
             c_compiler: gcc
-            cpp_compiler: gcc
+            cpp_compiler: g++
         exclude:
           - os: macOS
             c_compiler: gcc
-            cpp_compiler: gcc
           - os: Linux
             c_compiler: clang
-            cpp_compiler: clang
 
     steps:
     - uses: actions/checkout@v3
