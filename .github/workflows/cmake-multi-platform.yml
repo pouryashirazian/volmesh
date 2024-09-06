@@ -25,11 +25,18 @@ jobs:
       matrix:
         runner: [macOS, Linux]
         build_type: [Release]
-        c_compiler: [clang]
+        c_compiler: [clang, gcc]
         include:
           - os: macOS
             c_compiler: clang
             cpp_compiler: clang
+          - os: Linux
+            c_compiler: gcc
+            cpp_compiler: gcc
+        exclude:
+          - os: macOS
+            c_compiler: gcc
+            cpp_compiler: gcc
           - os: Linux
             c_compiler: clang
             cpp_compiler: clang
