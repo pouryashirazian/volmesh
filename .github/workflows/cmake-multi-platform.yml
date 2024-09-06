@@ -23,22 +23,22 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [macOS, Linux]
+        runner: [mbpro16, nvorin]
         build_type: [Release]
-        c_compiler: [gcc, clang, cl]
-        include:
-          - os: Linux
-            c_compiler: gcc
-            cpp_compiler: g++
-        exclude:
-          - os: windows-latest
-            c_compiler: cl
-          - os: windows-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: clang
-          - os: ubuntu-latest
-            c_compiler: cl
+        # c_compiler: [gcc, clang, cl]
+        # include:
+        #   - os: Linux
+        #     c_compiler: gcc
+        #     cpp_compiler: g++
+        # exclude:
+        #   - os: windows-latest
+        #     c_compiler: cl
+        #   - os: windows-latest
+        #     c_compiler: gcc
+        #   - os: windows-latest
+        #     c_compiler: clang
+        #   - os: ubuntu-latest
+        #     c_compiler: cl
 
     steps:
     - uses: actions/checkout@v3
