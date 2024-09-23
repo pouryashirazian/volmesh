@@ -17,9 +17,13 @@ int main(int argc, const char* argv[]) {
 
   cxxopts::Options options("makesdf", "Generate signed distance field from 3D surface meshes.");
 
+  std::stringstream ss_default_voxelsize;
+  ss_default_voxelsize << SignedDistanceField::kDefaultVoxelSize;
+
   options.add_options()
     ("i,input", "Input surface mesh (STL format only)", cxxopts::value<std::string>())
     ("o,output", "Output SDF in the VTK Image Data (VTI format)", cxxopts::value<std::string>())
+    ("v,voxelsize", "Voxel size", cxxopts::value<float>()->default_value(ss_default_voxelsize.str().c_str()))
     ("h,help", "Print usage")
   ;
 
@@ -31,10 +35,13 @@ int main(int argc, const char* argv[]) {
   }
 
   std::string surface_mesh_filepath = args["input"].as<std::string>();
-  SPDLOG_INFO("input surface mesh at [{}]", surface_mesh_filepath.c_str());
+  SPDLOG_INFO("input surface mesh = [{}]", surface_mesh_filepath.c_str());
 
   std::string sdf_filepath = args["output"].as<std::string>();
-  SPDLOG_INFO("output filepath at [{}]", sdf_filepath.c_str());
+  SPDLOG_INFO("output filepath = [{}]", sdf_filepath.c_str());
+
+  const real_t voxel_size = static_cast<real_t>(args["voxelsize"].as<float>());
+  SPDLOG_INFO("voxel size = [{}]", voxel_size);
 
   TriangleMesh tri_mesh;
   if (volmesh::ReadSTL(surface_mesh_filepath, tri_mesh) == false) {
@@ -50,7 +57,6 @@ int main(int argc, const char* argv[]) {
   tri_mesh.computeHalfEdgePseudoNormals();
   tri_mesh.computeVertexPseudoNormals();
 
-  const real_t voxel_size = 0.1;
   SignedDistanceField sdf;
   bool result = sdf.generate(tri_mesh, vec3(voxel_size, voxel_size, voxel_size), voxel_size);
   if (result == true) {

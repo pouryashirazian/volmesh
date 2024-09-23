@@ -14,6 +14,54 @@ C++ Classes
 -----------
 
 .. doxygenclass:: volmesh::AABB
+    :members: AABB, ~AABB, lower, upper, extent, expand, intersects, contains, operator=
+
+.. doxygenclass:: volmesh::Cell
+    :members:
+
+.. doxygenclass:: volmesh::HalfEdge
+    :members:
+
+.. doxygenclass:: volmesh::HalfFace
+    :members:
+
+.. doxygenclass:: volmesh::BaseIndex
+    :members:
+
+.. doxygenclass:: volmesh::VertexIndex
+    :members:
+
+.. doxygenclass:: volmesh::HalfEdgeIndex
+    :members:
+
+.. doxygenclass:: volmesh::HalfFaceIndex
+    :members:
+
+.. doxygenclass:: volmesh::CellIndex
+    :members:
+
+.. doxygenclass:: volmesh::MergeList
+    :members:
+
+.. doxygenclass:: volmesh::SignedDistanceField
+    :members:
+
+.. doxygenclass:: volmesh::SurfaceMesh
+    :members:
+
+.. doxygenclass:: volmesh::TetMesh
+    :members:
+
+.. doxygenclass:: volmesh::Tetrahedra
+    :members:
+
+.. doxygenclass:: volmesh::TriangleMesh
+    :members:
+
+.. doxygenclass:: volmesh::VolMesh
+    :members:
+
+.. doxygenclass:: volmesh::Voxel
     :members:
 
 

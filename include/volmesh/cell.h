@@ -6,6 +6,9 @@
 
 namespace volmesh {
 
+  /*!
+  * \brief Cell represents an element in a volumetic mesh.
+  */
   template <int NumFaces>
   class Cell {
   public:
