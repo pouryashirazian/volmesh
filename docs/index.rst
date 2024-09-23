@@ -17,7 +17,7 @@ C++ Classes
     :members: AABB, ~AABB, lower, upper, extent, expand, intersects, contains, operator=
 
 .. doxygenclass:: volmesh::Cell
-    :members:
+    :members: Cell, ~Cell, halfFaceIndex, numFaces, equals, operator=
 
 .. doxygenclass:: volmesh::HalfEdge
     :members:
