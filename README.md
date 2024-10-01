@@ -6,7 +6,7 @@
 
 volmesh uses a half-edge data structure to provide top-down and bottom-up traversal. The top-down traversal in surface meshes proceeds from faces to half-edges to vertices. We currently support triangle surface meshes only.
 
-![Surface mesh top-down traversal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/suface_topdown_traversal.png?raw=true)
+![Surface mesh top-down traversal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/surface_topdown_traversal.png?raw=true)
 
 
 Similarly, we use a half-face data structure to represent volume meshes. The top-down traversal in volume meshes proceeds from cells to half-faces, half-edges, and finally to vertices.
