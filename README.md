@@ -5,7 +5,8 @@
 **volmesh** converts a 3D surface mesh to a corresponding signed distance field (SDF) representation. The user can export the SDF to a VTI or MHD image file and then extract the iso-surface as a triangle mesh with [Paraview](https://www.paraview.org).
 
 volmesh uses a half-edge data structure to provide top-down and bottom-up traversal. The top-down traversal in surface meshes proceeds from faces to half-edges to vertices. We currently support triangle surface meshes only.
-![Surface mesh top-down traversal](/docs/images/surface_topdown_traversal.svg)
+
+![Surface mesh top-down traversal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/suface_topdown_traversal.png?raw=true)
 
 
 Similarly, we use a half-face data structure to represent volume meshes. The top-down traversal in volume meshes proceeds from cells to half-faces, half-edges, and finally to vertices.
