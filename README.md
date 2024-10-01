@@ -20,6 +20,7 @@ At this point in the algorithm, we have a normal per each face and pseudo normal
 
 ## Applications
 **volmesh** is designed for high-fidelity physically-based simulation of soft tissues. Some of the main applications of that are as follows:
-soft-tissue animation
-volume rendering
-surface reconstruction
+
+- soft-tissue animation
+- volume rendering
+- surface reconstruction
