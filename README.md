@@ -6,11 +6,11 @@
 
 volmesh uses a half-edge data structure to provide top-down and bottom-up traversal. The top-down traversal in surface meshes proceeds from faces to half-edges to vertices. We currently support triangle surface meshes only.
 
-![Surface mesh top-down traversal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/surface_topdown_traversal.svg?raw=true)
+![Surface mesh top-down traversal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/surface_topdown_traversal.svg?raw=true&sanitize=true)
 
 Similarly, we use a half-face data structure to represent volume meshes. The top-down traversal in volume meshes proceeds from cells to half-faces, half-edges, and finally to vertices.
 
-![Volume mesh top-down traversal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/volume_topdown_traversal.svg?raw=true)
+![Volume mesh top-down traversal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/volume_topdown_traversal.svg?raw=true&sanitize=true)
 
 ## How is the SDF computed?
 The input to our SDF calculation is a triangle mesh. The system reads the triangle mesh file from the disk and computes a half-edge representation in memory. In the next step, we compute a normal per each triangle face, followed by pseudo normals per each half-edge and vertex of the model. A pseudo normal for a half-edge is the weighted average of the normals associated with the adjacent faces to that half-edge. Similarly, the pseudo normal for each vertex is the weighted average of the normals per incident face. The weight is the incident angle of the triangle face at the associated vertex.
