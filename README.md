@@ -15,6 +15,8 @@ Similarly, we use a half-face data structure to represent volume meshes. The top
 ## How is the SDF computed?
 The input to our SDF calculation is a triangle mesh. The system reads the triangle mesh file from the disk and computes a half-edge representation in memory. In the next step, we compute a normal per each triangle face, followed by pseudo normals per each half-edge and vertex of the model. A pseudo normal for a half-edge is the weighted average of the normals associated with the adjacent faces to that half-edge. Similarly, the pseudo normal for each vertex is the weighted average of the normals per incident face. The weight is the incident angle of the triangle face at the associated vertex.
 
+![Point Triangle Regions](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/point_triangle_regions.svg?raw=true&sanitize=true)
+
 At this point in the algorithm, we have a normal per each face and pseudo normals for half-edges and vertices. The next step is to compute an axis-aligned bounding box for the entire 3D model and overlay a voxel grid with the specified resolution that encompasses the bounding box. We compute the shortest distance between each triangle and the points in the intersecting voxels.
 
 ## Applications
