@@ -33,7 +33,7 @@ Next, the system computes the shortest distance from each point in the voxel gri
 
 If the intersection point is inside the triangle (A1), we use the face-normal vector for signing. Otherwise, if it is inside areas 2, 4, or 6, we use the pseudo-normal associated with the half-edge adjacent to the corresponding area. Finally, if it is inside areas 3, 5, or 7, we use the pseudo normal associated with the vertex adjacent to the corresponding area.
 
-To compute the sign, we take the dot product of vector qp (directional vector from the intersection point to the query point) with the selected pseudo-normal. A positive dot product indicates a positive distance field value and a negative otherwise.
+To compute the sign, we take the dot product of vector qp (directional vector from the intersection point q to the voxel-grid point p) with the selected pseudo-normal. A positive dot product indicates a positive distance field value and a negative otherwise.
 
 ## Applications
 **volmesh** is designed for high-fidelity physically-based simulation of soft tissues. Some of the main applications of that are as follows:
@@ -42,3 +42,14 @@ To compute the sign, we take the dot product of vector qp (directional vector fr
 - volume rendering
 - surface reconstruction
 
+## How to build?
+It is very straightforward to build **volmesh**. Use the supplied `build.sh` script on Unix-based systems to build the library and the apps. This will build a release version of the library on your platform.
+```bash
+./build.sh
+```
+
+If you intend to extend **volmesh** with more features, you can build a debug version of it by supplying the "-b" switch:
+```bash
+./build.sh -b debug
+```
+**volmesh** uses a small number of third-party libraries and it manages these with [vcpkg](https://vcpkg.io/en/). 
