@@ -52,4 +52,4 @@ If you intend to extend **volmesh** with more features, you can build a debug ve
 ```bash
 ./build.sh -b debug
 ```
-**volmesh** uses a small number of third-party libraries and it manages these with ![vcpkg](https://vcpkg.io/en/). 
+**volmesh** uses a small number of third-party libraries and it manages these with [vcpkg](https://vcpkg.io/en/). 
