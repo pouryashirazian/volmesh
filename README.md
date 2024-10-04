@@ -33,7 +33,7 @@ Next, the system computes the shortest distance from each point in the voxel gri
 
 If the intersection point is inside the triangle (A1), we use the face-normal vector for signing. Otherwise, if it is inside areas 2, 4, or 6, we use the pseudo-normal associated with the half-edge adjacent to the corresponding area. Finally, if it is inside areas 3, 5, or 7, we use the pseudo normal associated with the vertex adjacent to the corresponding area.
 
-To compute the sign, we take the dot product of vector qp (directional vector from the intersection point to the query point) with the selected pseudo-normal. A positive dot product indicates a positive distance field value and a negative otherwise.
+To compute the sign, we take the dot product of vector qp (directional vector from the intersection point q to the voxel-grid point p) with the selected pseudo-normal. A positive dot product indicates a positive distance field value and a negative otherwise.
 
 ## Applications
 **volmesh** is designed for high-fidelity physically-based simulation of soft tissues. Some of the main applications of that are as follows:
