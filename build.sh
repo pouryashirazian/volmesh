@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+#------------------------------------------------------------------------------
+# Copyright (c) Pourya Shirazian
+# All rights reserved.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+#------------------------------------------------------------------------------
+
 get_current_dir() {
   SOURCE="${BASH_SOURCE[0]}"
 

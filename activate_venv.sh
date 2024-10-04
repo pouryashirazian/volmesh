@@ -1,3 +1,11 @@
+#------------------------------------------------------------------------------
+# Copyright (c) Pourya Shirazian
+# All rights reserved.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+#------------------------------------------------------------------------------
+
 if [[ $0 == $BASH_SOURCE ]]; then
   echo "This script is supposed to be sourced only"
   exit 1

@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Pourya Shirazian
+// All rights reserved.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+//-----------------------------------------------------------------------------
+
 #include "volmesh/mathutils.h"
 
 #include <math.h>
@@ -77,7 +85,6 @@ namespace volmesh {
     // point line distance is the distance between q and p
     return (p - q).norm();
   }
-
 
   ClosestTriangleFeature ComputeClosestTriangleFeature(const ClosestLineSegmentFeature segment_feature,
                                                        const TriangleVertex start_vertex,
@@ -199,7 +206,6 @@ namespace volmesh {
         }
       }
     }
-
     return shortest_distance;
   }
 

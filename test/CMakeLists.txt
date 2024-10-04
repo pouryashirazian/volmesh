@@ -1,3 +1,11 @@
+#------------------------------------------------------------------------------
+# Copyright (c) Pourya Shirazian
+# All rights reserved.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+#------------------------------------------------------------------------------
+
 # Define test cases and register each test to test suites
 file (GLOB TEST_SUITE "test_*.cpp")
 

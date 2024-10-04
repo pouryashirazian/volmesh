@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Pourya Shirazian
+// All rights reserved.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+//-----------------------------------------------------------------------------
+
 template <int kNumEdgesPerFace, template <int NumEdgesPerFace> class LayoutPolicy>
 SurfaceMesh<kNumEdgesPerFace, LayoutPolicy>::SurfaceMesh() {
 

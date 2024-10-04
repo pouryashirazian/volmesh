@@ -1,3 +1,11 @@
+#------------------------------------------------------------------------------
+# Copyright (c) Pourya Shirazian
+# All rights reserved.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+#------------------------------------------------------------------------------
+
 cmake_minimum_required(VERSION 3.20)
 
 project(volmesh LANGUAGES CXX)
@@ -6,21 +14,25 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# define all build options here
-option(BUILD_DOCS "Build documentation" ON)
+#----------------------------------------------------------------------------------
+# All build options
+#----------------------------------------------------------------------------------
+# We disabled building docs by default as it requires doxygen, sphinx and dot which
+# may not be available on the user system.
+option(BUILD_DOCS "Build documentation" OFF)
 mark_as_advanced(BUILD_DOCS)
 
 #----------------------------------------------------------------------------------
-# Find external packages
+# Finds external packages
 #----------------------------------------------------------------------------------
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-
 enable_testing()
-# find_package(GTest CONFIG REQUIRED)
-# message(FATAL_ERROR "GTEST_INCLUDE_DIRS = ${GTEST_INCLUDE_DIRS}")
-set(VOLMESH_LIB_NAME "volmesh")
 
+#----------------------------------------------------------------------------------
+# Builds the main library
+#----------------------------------------------------------------------------------
+set(VOLMESH_LIB_NAME "volmesh")
 add_library(${VOLMESH_LIB_NAME}
             STATIC
             src/volmesh/aabb.cpp
@@ -40,15 +52,24 @@ add_library(${VOLMESH_LIB_NAME}
 target_include_directories(${VOLMESH_LIB_NAME} PRIVATE
                            ${CMAKE_SOURCE_DIR}/include)
 
-# target_compile_options(${VOLMESH_LIB_NAME} PRIVATE -g)
 target_link_libraries(${VOLMESH_LIB_NAME}
                       PRIVATE
                       Eigen3::Eigen
                       fmt::fmt)
 
+#----------------------------------------------------------------------------------
+# Builds tests
+#----------------------------------------------------------------------------------
 add_subdirectory(test)
+
+#----------------------------------------------------------------------------------
+# Builds apps
+#----------------------------------------------------------------------------------
 add_subdirectory(apps)
 
+#----------------------------------------------------------------------------------
+# Builds docs. Only enable if you have already installed doxygen, sphinx, and dot.
+#----------------------------------------------------------------------------------
 if(BUILD_DOCS)
   set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
   add_subdirectory(docs)
