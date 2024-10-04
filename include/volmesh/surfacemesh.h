@@ -223,6 +223,32 @@ public:
 
 private:
   /**
+   * @brief Mutex for protecting access to half-faces in a multi-threaded environment.
+   *
+   * This mutex ensures that concurrent modifications or reads of half-faces
+   * are safely managed, preventing data races.
+   */
+  mutable std::mutex hfaces_mutex_;
+
+  /**
+   * @brief Vector storing the half-faces of the surface mesh.
+   *
+   * This vector contains all the half-faces that make up the surface mesh.
+   * Each half-face is represented by the type HalfFaceType, which holds information
+   * about the face's connectivity and orientation.
+   */
+  std::vector<HalfFaceType> hfaces_;
+
+  /**
+   * @brief Vector storing the normals associated with each half-face.
+   *
+   * This vector contains the normal vectors for each half-face in the surface mesh,
+   * which can be used for lighting calculations, shading, and other geometric
+   * computations that require surface orientation.
+   */
+  std::vector<vec3> hface_normals_;
+
+  /**
    * @brief Stores the incident half-faces for each half-edge.
    *
    * This vector of vectors holds the indices of half-faces that are incident to each half-edge in the mesh.

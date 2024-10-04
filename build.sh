@@ -23,9 +23,10 @@ get_current_dir() {
 }
 
 usage() {
-  echo "usage: build.sh [-b <build type debug | release>] "
+  echo "usage: build.sh [-b <build type debug | release>] [-d <build docs on | off]"
   echo
   echo "   -b: build type      = (default: release)"
+  echo "   -b: build docs      = (default: off)"
   echo
   exit 1
 }
@@ -56,7 +57,10 @@ build() {
   CMAKE_BUILD_TYPE=$(camelcase $BUILD_TYPE)
   debug "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}"
 
-  cmake -G "Unix Makefiles" -B ${BUILD_DIR} -S . -DCMAKE_TOOLCHAIN_FILE=${DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+  cmake -G "Unix Makefiles" -B ${BUILD_DIR} -S . \
+        -DCMAKE_TOOLCHAIN_FILE=${DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+        -DBUILD_DOCS=$(upper $BUILD_DOCS)
   check_result_abort_failed $? "Failed when configuring the build with cmake"
 
   # build
@@ -76,12 +80,14 @@ build() {
 
 get_current_dir
 BUILD_TYPE=release
+BUILD_DOCS=off
 
 source $DIR/scripts/utils.sh
 
-while getopts ":b:h" opt; do
+while getopts ":b:d:h" opt; do
   case "${opt}" in
     b) BUILD_TYPE="$(lower ${OPTARG})";;
+    d) BUILD_DOCS="$(lower ${OPTARG})";;
     *) usage;;
   esac
 done
@@ -90,6 +96,20 @@ done
 if [ "${BUILD_TYPE}" != "release" ] && [ "${BUILD_TYPE}" != "debug" ]; then
   error "Invalid value for the build argument. supplied = [${BUILD_TYPE}]"
   exit 1
+fi
+
+if [ "${BUILD_DOCS}" != "on" ] && [ "${BUILD_DOCS}" != "off" ]; then
+  error "Invalid value for the build docs argument. supplied = [${BUILD_DOCS}]"
+  exit 1
+fi
+
+if [ "${BUILD_DOCS}" == "on" ] && [ -z "$VIRTUAL_ENV" ]; then
+  info "bootstrap python virtual environment if not exists"
+  ${DIR}/bootstrap.sh
+
+  info "activating python virtual environment if exists"
+  source ${DIR}/activate_venv.sh
+  check_result_abort_failed $? "failed activating the python virtual environment"
 fi
 
 build
