@@ -10,8 +10,10 @@ Welcome to VolMesh's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+.. include:: README.rst
+
 C++ Classes
------------
+===========
 
 .. doxygenclass:: volmesh::AABB
     :members: AABB, ~AABB, lower, upper, extent, expand, intersects, contains, operator=
@@ -63,6 +65,42 @@ C++ Classes
 
 .. doxygenclass:: volmesh::Voxel
     :members:
+
+Math Utility Functions
+======================
+
+.. doxygenfunction:: volmesh::FuzzyIsNull(double d)
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::FuzzyIsNull(float f)
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::FuzzyCompare(double p1, double p2)
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::FuzzyCompare(float p1, float p2)
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::RadToDeg
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::DegToRad
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::ComputeInternalAngle
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::NormalsDirectionMatch
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::PointLineSegmentDistance
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::PointTriangleDistance
+   :project: volmesh
+
+.. doxygenfunction:: volmesh::ComputeTriangleAABB
+   :project: volmesh
 
 
 Indices and tables
