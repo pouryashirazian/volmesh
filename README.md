@@ -42,3 +42,14 @@ To compute the sign, we take the dot product of vector qp (directional vector fr
 - volume rendering
 - surface reconstruction
 
+## How to build?
+It is very straightforward to build **volmesh**. Use the supplied `build.sh` script on Unix-based systems to build the library and the apps. This will build a release version of the library on your platform.
+```bash
+./build.sh
+```
+
+If you intend to extend **volmesh** with more features, you can build a debug version of it by supplying the "-b" switch:
+```bash
+./build.sh -b debug
+```
+**volmesh** uses a small number of third-party libraries and it manages these with ![vcpkg](https://vcpkg.io/en/). 
