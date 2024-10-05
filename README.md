@@ -4,7 +4,7 @@
 ## How volmesh works?
 **volmesh** converts a 3D surface mesh to a corresponding signed distance field (SDF) representation. The user can export the SDF to a VTK Image data [VTI format](https://docs.vtk.org/en/latest/design_documents/VTKFileFormats.html#imagedata) and then extract the iso-surface as a triangle mesh with [Paraview](https://www.paraview.org).
 
-**volmesh** uses a half-edge data structure to provide top-down and bottom-up traversal. The top-down traversal in surface meshes proceeds from faces to half-edges to vertices (see Figure 1). We currently support triangle surface meshes only.
+**volmesh** uses a half-edge data structure to provide top-down and bottom-up traversal. The top-down traversal in surface meshes proceeds from faces to half-edges to vertices (figure 1). We currently support triangle surface meshes only.
 
 | ![Surface mesh top-down traversal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/surface_topdown_traversal.svg?raw=true&sanitize=true) |
 | :--: |
@@ -19,13 +19,13 @@ Similarly, we use a half-face data structure to represent volume meshes. The top
 ## How is the SDF computed?
 The input to our SDF calculation is a triangle mesh. The system reads the triangle mesh file from the disk and computes a half-edge representation in memory.
 We compute the axis-aligned bounding box (AABB) per the vertex list and embed a voxel grid with the specified voxel size to encompass the entire bounding box.
-In the next step, we compute a normal per each triangle face, followed by pseudo normals per each half-edge and vertex of the model. A pseudo normal for a half-edge is the weighted average of the normals associated with the adjacent faces to that half-edge. Similarly, the pseudo normal for each vertex is the weighted average of the normals per incident face. The weight is the incident angle of the triangle face at the associated vertex.
+In the next step, we compute a normal per each triangle face, followed by pseudo normals per each half-edge and vertex of the model. A pseudo normal for a half-edge is the weighted average of the normals associated with the adjacent faces to that half-edge. Similarly, the pseudo normal for each vertex is the weighted average of the normals per incident face. The weight is the incident angle of the triangle face at the associated vertex (figure 3).
 
 | ![normal](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/vertex_pseudo_normals.svg?raw=true&sanitize=true) |
 | :--: |
 | *Figure 3. The pseudo normal per each vertex is the sum of all angle-weighted normals per adjacent faces* |
 
-Next, the system computes the shortest distance from each point in the voxel grid to the triangle mesh. Per each voxel-grid point p, the system computes its intersection point q with the closest triangle feature. The intersection point q can belong to seven different areas of a triangle.
+Next, the system computes the shortest distance from each point in the voxel grid to the triangle mesh. Per each voxel-grid point p, the system computes its intersection point q with the closest triangle feature. The intersection point q can belong to seven different areas of a triangle (figure 4).
 
 | ![point-triangle regions](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/point_triangle_regions.svg?raw=true&sanitize=true) |
 | :--: |
@@ -52,4 +52,14 @@ If you intend to extend **volmesh** with more features, you can build a debug ve
 ```bash
 ./build.sh -b debug
 ```
-**volmesh** uses a small number of third-party libraries and it manages these with [vcpkg](https://vcpkg.io/en/). 
+**volmesh** uses a small number of third-party libraries and it manages these with [vcpkg](https://vcpkg.io/en/).
+
+## How to generate SDF?
+Use the provided **makesdf** application to generate signed distance fields from triangle meshes.
+```bash
+cd ~/volmesh/build-darwin-release/apps/makesdf
+./makesdf -i ~/Desktop/volmesh_samples/stanford_happy_buddha.stl -o ~/volmesh_samples/stanford_happy_buddha_0.001.vti -v 0.001
+```
+![Stanford Bunny SDF](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/stanford_bunny_sdf_1920×1291.png?raw=true&sanitize=true)
+![Stanford Bunny SDF](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/stanford_happy_buddha_sdf_1920x1080.png?raw=true&sanitize=true)
+

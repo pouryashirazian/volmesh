@@ -169,14 +169,14 @@ public:
   real_t fieldValue(const vec3i& coords) const;
 
   /**
-   * @brief Saves the signed distance field to a file.
+   * @brief Saves the signed distance field to a VTK Image data (VTI) file.
    *
-   * This function writes the SDF data to a file for later use.
+   * This function writes the SDF data to a VTK Image data file for later use.
    *
    * @param filepath The file path where the SDF will be saved.
    * @return True if the SDF was successfully saved, otherwise false.
    */
-  bool save(const std::string& filepath) const;
+  bool saveAsVTI(const std::string& filepath) const;
 
   /**
    * @brief Loads a signed distance field from a file.

@@ -11,7 +11,7 @@
 #include <string>
 namespace volmesh {
 
-    class TriangleMesh;
+class TriangleMesh;
 
 /**
  * @brief Reads an STL (Stereolithography) file and populates a triangle mesh.

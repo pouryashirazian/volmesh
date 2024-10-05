@@ -68,7 +68,7 @@ int main(int argc, const char* argv[]) {
   SignedDistanceField sdf;
   bool result = sdf.generate(tri_mesh, vec3(voxel_size, voxel_size, voxel_size), voxel_size);
   if (result == true) {
-    if (sdf.save(sdf_filepath)) {
+    if (sdf.saveAsVTI(sdf_filepath)) {
       SPDLOG_INFO("Saved SDF under [{}]", sdf_filepath.c_str());
     } else {
       SPDLOG_ERROR("Failed when saving the SDF under [{}].", sdf_filepath.c_str());

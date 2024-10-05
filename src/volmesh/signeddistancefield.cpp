@@ -338,7 +338,7 @@ real_t SignedDistanceField::fieldValue(const vec3i& coords) const {
   return field;
 }
 
-bool SignedDistanceField::save(const std::string& filepath) const {
+bool SignedDistanceField::saveAsVTI(const std::string& filepath) const {
   if (totalGridPointsCount() == 0) {
     SPDLOG_ERROR("This instance is empty. Initialize before saving to disk");
     return false;
