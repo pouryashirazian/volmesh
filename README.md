@@ -60,6 +60,9 @@ Use the provided **makesdf** application to generate signed distance fields from
 cd ~/volmesh/build-darwin-release/apps/makesdf
 ./makesdf -i ~/Desktop/volmesh_samples/stanford_happy_buddha.stl -o ~/volmesh_samples/stanford_happy_buddha_0.001.vti -v 0.001
 ```
-![Stanford Bunny SDF](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/stanford_bunny_sdf_1920×1291.png?raw=true&sanitize=true)
+
+![Stanford Bunny SDF](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/stanford_bunny_sdf_1920×1080.png?raw=true&sanitize=true)
+
+
 ![Stanford Bunny SDF](https://github.com/pouryashirazian/volmesh/blob/main/docs/images/stanford_happy_buddha_sdf_1920x1080.png?raw=true&sanitize=true)
 
