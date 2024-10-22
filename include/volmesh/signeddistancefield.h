@@ -179,14 +179,14 @@ public:
   bool saveAsVTI(const std::string& filepath) const;
 
   /**
-   * @brief Loads a signed distance field from a file.
+   * @brief Loads the signed distance field to a VTK Image data (VTI) file.
    *
-   * This function loads SDF data from a file.
+   * This function loads the SDF data to a VTK Image data file for later use.
    *
-   * @param filepath The file path from which to load the SDF.
+   * @param filepath The file path where the SDF will be saved.
    * @return True if the SDF was successfully loaded, otherwise false.
    */
-  bool load(const std::string& filepath);
+  bool loadAsVTI(const std::string& filepath);
 
   /**
    * @brief Assignment operator.
@@ -219,22 +219,14 @@ private:
    */
   void assertGridPointCoords(const vec3i& coords) const;
 
-  /**
-   * @brief Retrieves the position and magnitude of a grid point.
-   *
-   * This function retrieves the 3D position and magnitude of the field at the given grid point.
-   *
-   * @param coords The grid point coordinates.
-   * @return A `vec4` containing the 3D position and magnitude.
-   */
-  vec4 gridPointPositionAndMagnitude(const vec3i& coords) const;
+  bool parseAsciiValues(const std::string& in_data_string,
+                        std::vector<real_t>& out_data_values);
 
 private:
   real_t voxel_size_ = kDefaultVoxelSize; /**< The size of each voxel in the SDF. */
   AABB bounds_; /**< The axis-aligned bounding box (AABB) of the SDF. */
-  std::vector<real_t> magnitudes_; /**< The field magnitudes at each grid point. */
-  std::vector<real_t> signs_; /**< The sign (positive/negative) at each grid point. */
-  mutable std::mutex magnitude_sign_mutex_; /**< Mutex for thread-safe access to magnitudes and signs. */
+  std::vector<real_t> field_values_; /**< The field values at each grid point. */
+  mutable std::mutex field_values_mutex_; /**< Mutex for thread-safe access to magnitudes and signs. */
 };
 
 }

@@ -13,6 +13,7 @@
 #include <fstream>
 #include <filesystem>
 #include <chrono>
+#include <tinyxml2.h>
 
 using namespace volmesh;
 
@@ -32,9 +33,8 @@ void SignedDistanceField::copyFrom(const SignedDistanceField& rhs) {
   voxel_size_ = rhs.voxel_size_;
   bounds_ = rhs.bounds_;
 
-  std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
-  magnitudes_ = rhs.magnitudes_;
-  signs_ = rhs.signs_;
+  std::lock_guard<std::mutex> lk(field_values_mutex_);
+  field_values_ = rhs.field_values_;
 }
 
 AABB SignedDistanceField::bounds() const {
@@ -90,10 +90,16 @@ vec3 SignedDistanceField::gridPointPosition(const vec3i& coords) const {
 }
 
 vec4 SignedDistanceField::gridPointPositionAndFieldValue(const vec3i& coords) const {
-  // gridPointPositionAndMagnitude will assert coords
-  vec4 result = gridPointPositionAndMagnitude(coords);
-  result.w() *= signs_[gridPointId(coords)] < 0 ? -1 : 1;
-  return result;
+  // gridPointPosition validates the coords
+  const vec3 position = gridPointPosition(coords);
+
+  real_t field_value = 0.0;
+  {
+    std::lock_guard<std::mutex> lk(field_values_mutex_);
+    field_value = field_values_[gridPointId(coords)];
+  }
+
+  return vec4(position.x(), position.y(), position.z(), field_value);
 }
 
 bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
@@ -122,15 +128,12 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
   // store requested voxel size
   voxel_size_ = voxel_size;
 
-  {
-    std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
-    magnitudes_.resize(totalGridPointsCount());
-    signs_.resize(totalGridPointsCount());
+  std::vector<real_t> magnitudes(totalGridPointsCount());
+  std::vector<real_t> signs(totalGridPointsCount());
 
-    // initialize the voxel grid by settings all values to +infinity
-    std::fill(magnitudes_.begin(), magnitudes_.end(), std::numeric_limits<real_t>::max());
-    std::fill(signs_.begin(), signs_.end(), 0.0);
-  }
+  // initialize the voxel grid by settings all values to +infinity
+  std::fill(magnitudes.begin(), magnitudes.end(), std::numeric_limits<real_t>::max());
+  std::fill(signs.begin(), signs.end(), 0.0);
 
   // process all faces in the mesh
   const uint32_t count_faces = in_mesh.countFaces();
@@ -197,10 +200,9 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
         for(int x = start_x; x < stop_x; x++) {
 
           const vec3i coords = vec3i(x, y, z);
+          const vec3 p = gridPointPosition(coords);
+          const real_t prev_dist = magnitudes[gridPointId(coords)];
 
-          const vec4 pos_and_fmag = gridPointPositionAndMagnitude(coords);
-          const vec3 p = pos_and_fmag.head<3>();
-          const real_t prev_dist = pos_and_fmag.w();
           vec3 q(0.0, 0.0, 0.0);
 
           ClosestTriangleFeature closest_feature;
@@ -254,25 +256,31 @@ bool SignedDistanceField::generate(const TriangleMesh& in_mesh,
             const uint64_t gridpoint_id = gridPointId(coords);
 
             if (dist < prev_dist) {
-              std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
-
-              magnitudes_[gridpoint_id] = dist;
+              magnitudes[gridpoint_id] = dist;
 
               // replace sign
-              signs_[gridpoint_id] = dir_vec_qp.dot(pseudo_normal);
+              signs[gridpoint_id] = dir_vec_qp.dot(pseudo_normal);
             } else if (FuzzyCompare(dist, prev_dist) == true) {
-              std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
-
-              magnitudes_[gridpoint_id] = dist;
+              magnitudes[gridpoint_id] = dist;
 
               // accumulate sign
-              signs_[gridpoint_id] += dir_vec_qp.dot(pseudo_normal);
+              signs[gridpoint_id] += dir_vec_qp.dot(pseudo_normal);
             }
           } // if dist
         }
       }
     }
   } // end for face
+
+  // save the final field values
+  {
+    std::lock_guard<std::mutex> lk(field_values_mutex_);
+    field_values_.resize(totalGridPointsCount());
+
+    for (size_t i=0; i < field_values_.size(); ++i) {
+      field_values_[i] = (signs[i] >= 0) ? magnitudes[i] : - magnitudes[i];
+    }
+  }
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -327,15 +335,14 @@ real_t SignedDistanceField::fieldValue(const vec3i& coords) const {
   // gridPointId will assert coords
   const uint64_t gridpoint_id = gridPointId(coords);
 
-  real_t field = 0.0;
+  real_t field_value = 0.0;
 
   {
-    std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
-    const real_t mag = magnitudes_[gridpoint_id];
-    field = signs_[gridpoint_id] < 0 ? - mag : mag;
+    std::lock_guard<std::mutex> lk(field_values_mutex_);
+    field_value = field_values_[gridpoint_id];
   }
 
-  return field;
+  return field_value;
 }
 
 bool SignedDistanceField::saveAsVTI(const std::string& filepath) const {
@@ -392,8 +399,170 @@ bool SignedDistanceField::saveAsVTI(const std::string& filepath) const {
   return true;
 }
 
-bool SignedDistanceField::load(const std::string& filepath) {
-  return false;
+bool SignedDistanceField::loadAsVTI(const std::string& filepath) {
+  struct ImageData {
+    vec3i gridpoints_count;
+    float spacing[3];
+    float origin[3];
+    std::string scalar_type;
+    std::string scalar_data;
+  };
+
+  ImageData image_data;
+  tinyxml2::XMLDocument doc;
+
+  // Load the .vti file
+  tinyxml2::XMLError eResult = doc.LoadFile(filepath.c_str());
+  if (eResult != tinyxml2::XML_SUCCESS) {
+    SPDLOG_ERROR("Failed loading VTI file: {}", filepath.c_str());
+    return false;
+  }
+
+  // Get the ImageData node
+  tinyxml2::XMLElement* root = doc.FirstChildElement("VTKFile");
+  if (!root) {
+    SPDLOG_ERROR("No VTKFile element found.");
+    return false;
+  }
+
+  tinyxml2::XMLElement* imageDataElement = root->FirstChildElement("ImageData");
+  if (!imageDataElement) {
+    SPDLOG_ERROR("No ImageData element found.");
+    return false;
+  }
+
+  // Get the WholeExtent attribute (describes the dimensions of the volume)
+  const char* extentStr = imageDataElement->Attribute("WholeExtent");
+  if (extentStr) {
+    int ext[6];
+    std::sscanf(extentStr, "%d %d %d %d %d %d",
+                &ext[0], &ext[1], &ext[2], &ext[3], &ext[4], &ext[5]);
+
+    // Calculate the dimensions from the extents
+    image_data.gridpoints_count.x() = ext[1] - ext[0] + 1;
+    image_data.gridpoints_count.y() = ext[3] - ext[2] + 1;
+    image_data.gridpoints_count.z() = ext[5] - ext[4] + 1;
+
+    SPDLOG_DEBUG("grid points dimension = {} x {} x {}",
+                  image_data.gridpoints_count.x(),
+                  image_data.gridpoints_count.y(),
+                  image_data.gridpoints_count.z());
+  } else {
+    SPDLOG_ERROR("WholeExtent attribute not found.");
+    return false;
+  }
+
+  // Get the Origin attribute (defines the origin of the volume in world coordinates)
+  const char* originStr = imageDataElement->Attribute("Origin");
+  if (originStr) {
+    std::sscanf(originStr, "%f %f %f",
+                &image_data.origin[0],
+                &image_data.origin[1],
+                &image_data.origin[2]);
+
+    SPDLOG_DEBUG("Origin: ({}, {}, {})",
+                 image_data.origin[0],
+                 image_data.origin[1],
+                 image_data.origin[2]);
+  } else {
+    SPDLOG_ERROR("Origin attribute not found.");
+    return false;
+  }
+
+  // Get the Spacing attribute (defines the voxel size)
+  const char* spacingStr = imageDataElement->Attribute("Spacing");
+  if (spacingStr) {
+    std::sscanf(spacingStr, "%f %f %f",
+                &image_data.spacing[0],
+                &image_data.spacing[1],
+                &image_data.spacing[2]);
+
+    SPDLOG_DEBUG("Spacing: ({}, {}, {})",
+                  image_data.spacing[0],
+                  image_data.spacing[1],
+                  image_data.spacing[2]);
+  } else {
+    SPDLOG_ERROR("Spacing attribute not found.");
+    return false;
+  }
+
+  // Get PointData (which usually contains scalar data)
+  tinyxml2::XMLElement* pointDataElement = imageDataElement->FirstChildElement("Piece")
+                                                        ->FirstChildElement("PointData");
+  if (!pointDataElement) {
+    SPDLOG_ERROR("No PointData element found.");
+    return false;
+  }
+
+  // Read the scalar data type
+  tinyxml2::XMLElement* dataArrayElement = pointDataElement->FirstChildElement("DataArray");
+  if (dataArrayElement) {
+    image_data.scalar_type = dataArrayElement->Attribute("type");
+    image_data.scalar_data = dataArrayElement->GetText();
+
+    if (image_data.scalar_type != "Float32") {
+      SPDLOG_ERROR("The scalar type {} is not supported.", image_data.scalar_type.c_str());
+      return false;
+    }
+  } else {
+    SPDLOG_ERROR("No scalar DataArray found.");
+    return false;
+  }
+
+  // load the VTI data
+  if (FuzzyCompare(image_data.spacing[0], image_data.spacing[1]) == false ||
+      FuzzyCompare(image_data.spacing[0], image_data.spacing[2]) == false) {
+    SPDLOG_ERROR("Non uniform voxel grid is not supported");
+    return false;
+  }
+
+  voxel_size_ = image_data.spacing[0];
+
+  const vec3 origin(image_data.origin[0], image_data.origin[1], image_data.origin[2]);
+  const vec3 voxels_count(static_cast<real_t>(image_data.gridpoints_count[0] - 1),
+                          static_cast<real_t>(image_data.gridpoints_count[1] - 1),
+                          static_cast<real_t>(image_data.gridpoints_count[2] - 1));
+  const vec3 aabb_extent = image_data.spacing[0] * voxels_count;
+  bounds_ = AABB(origin, origin + aabb_extent);
+
+  // load field values
+  bool result = false;
+
+  {
+    std::lock_guard<std::mutex> lock(field_values_mutex_);
+    field_values_.reserve(image_data.gridpoints_count[0] * image_data.gridpoints_count[1] * image_data.gridpoints_count[2]);
+    result = parseAsciiValues(image_data.scalar_data, field_values_);
+  }
+
+  return result;
+}
+
+// Function to parse ASCII values, including special cases like infinity
+bool SignedDistanceField::parseAsciiValues(const std::string& in_data_string,
+                                           std::vector<real_t>& out_data_values) {
+    std::stringstream ss(in_data_string);
+    std::string token;
+
+    // Split by whitespace and handle each token
+    while (ss >> token) {
+      float value;
+      if (token == "inf" || token == "+inf" || token == "Inf") {
+        value = std::numeric_limits<float>::max();
+      } else if (token == "-inf" || token == "-Inf") {
+        value = -std::numeric_limits<float>::max();
+      } else {
+        try {
+          value = std::stof(token);  // Convert string to float
+        } catch (const std::invalid_argument&) {
+          SPDLOG_ERROR("Could not parse token [{}] as float.", token.c_str());
+          continue;
+        }
+      }
+
+      out_data_values.push_back(static_cast<real_t>(value));
+    }
+
+    return true;
 }
 
 SignedDistanceField& SignedDistanceField::operator=(const SignedDistanceField& rhs) {
@@ -420,21 +589,4 @@ void SignedDistanceField::assertGridPointCoords(const vec3i& coords) const {
                                        0, gridpoints_count.z() - 1);
     throw std::out_of_range(message);
   }
-}
-
-vec4 SignedDistanceField::gridPointPositionAndMagnitude(const vec3i& coords) const {
-  assertGridPointCoords(coords);
-
-  const vec3 position = bounds_.lower() +
-                        vec3(static_cast<real_t>(coords.x()) * voxel_size_,
-                             static_cast<real_t>(coords.y()) * voxel_size_,
-                             static_cast<real_t>(coords.z()) * voxel_size_);
-
-  real_t magnitude = 0.0;
-  {
-    std::lock_guard<std::mutex> lk(magnitude_sign_mutex_);
-    magnitude = magnitudes_[gridPointId(coords)];
-  }
-
-  return vec4(position.x(), position.y(), position.z(), magnitude);
 }

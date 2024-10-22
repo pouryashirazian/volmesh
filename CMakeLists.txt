@@ -27,6 +27,7 @@ mark_as_advanced(BUILD_DOCS)
 #----------------------------------------------------------------------------------
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(tinyxml2 CONFIG REQUIRED)
 enable_testing()
 
 #----------------------------------------------------------------------------------
@@ -55,7 +56,8 @@ target_include_directories(${VOLMESH_LIB_NAME} PRIVATE
 target_link_libraries(${VOLMESH_LIB_NAME}
                       PRIVATE
                       Eigen3::Eigen
-                      fmt::fmt)
+                      fmt::fmt
+                      tinyxml2::tinyxml2)
 
 #----------------------------------------------------------------------------------
 # Builds tests
